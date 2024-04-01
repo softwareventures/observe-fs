@@ -1,0 +1,84 @@
+{
+  "private": true,
+  "name": "@softwareventures/observe-fs",
+  "version": "0.0.0-development",
+  "description": "",
+  "keywords": [],
+  "author": "Daniel Cassidy <mail@danielcassidy.me.uk>",
+  "homepage": "https://github.com/softwareventures/observe-fs",
+  "bugs": "https://github.com/softwareventures/observe-fs/issues",
+  "repository": "github:softwareventures/observe-fs",
+  "license": "ISC",
+  "type": "module",
+  "scripts": {
+    "commit": "cz",
+    "fix": "tsc --noEmit && eslint . --fix && prettier --write .",
+    "postinstall": "husky",
+    "lint": "tsc --noEmit && eslint . && prettier --check .",
+    "prepack": "tsc && pinst --disable",
+    "postpack": "pinst --enable",
+    "test": "ava"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": "./index.js"
+  },
+  "engines": {
+    "node": "^18 || ^20 || >=21"
+  },
+  "dependencies": {
+    "tslib": "^2.6.2"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "19.2.1",
+    "@commitlint/config-conventional": "19.1.0",
+    "@commitlint/cz-commitlint": "19.2.0",
+    "@softwareventures/eslint-config": "7.5.0",
+    "@softwareventures/precise-commits": "4.0.5",
+    "@softwareventures/prettier-config": "4.0.0",
+    "@softwareventures/semantic-release-config": "4.1.0",
+    "@softwareventures/tsconfig": "7.1.1",
+    "@types/node": "17.0.45",
+    "@typescript-eslint/eslint-plugin": "7.4.0",
+    "@typescript-eslint/parser": "7.4.0",
+    "ava": "6.1.2",
+    "commitizen": "4.3.0",
+    "conventional-changelog-conventionalcommits": "7.0.2",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-import": "2.29.1",
+    "eslint-plugin-jsdoc": "48.2.2",
+    "eslint-plugin-prefer-arrow": "1.2.3",
+    "eslint-plugin-sonarjs": "0.25.0",
+    "husky": "9.0.11",
+    "inquirer": "9.2.17",
+    "pinst": "3.0.0",
+    "prettier": "3.2.5",
+    "semantic-release": "23.0.6",
+    "tsimp": "2.0.11",
+    "typescript": "5.4.3"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": "@softwareventures"
+  },
+  "prettier": "@softwareventures/prettier-config",
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/@commitlint/cz-commitlint"
+    }
+  },
+  "ava": {
+    "concurrency": 1,
+    "extensions": {
+      "ts": "module"
+    },
+    "nodeArguments": [
+      "--import=tsimp/import"
+    ]
+  },
+  "release": {
+    "extends": "@softwareventures/semantic-release-config"
+  },
+  "packageManager": "yarn@4.1.1"
+}
