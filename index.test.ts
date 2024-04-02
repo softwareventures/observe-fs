@@ -2,7 +2,7 @@ import {open, rename, rm} from "node:fs/promises";
 import * as os from "node:os";
 import test from "ava";
 import {temporaryFileTask} from "tempy";
-import {filter, BehaviorSubject, EMPTY, firstValueFrom, interval, of} from "rxjs";
+import {filter, BehaviorSubject, EMPTY, firstValueFrom, interval, of, Subject} from "rxjs";
 import {
     concatWith,
     delay,
@@ -94,6 +94,7 @@ type TestFileState = "Init" | "SeenSentinel" | "Ready" | "Done";
 async function testFileObservable(actions: (path: string) => Promise<void>): Promise<FileEvent[]> {
     return temporaryFileTask(async path => {
         const stateEvents = new BehaviorSubject<TestFileState>("Init");
+        const errorEvents = new Subject<unknown>();
         const fileEvents = observeFileEvents(path);
         const requestSentinel = interval(1).pipe(map(() => "RequestSentinel" as const));
 
@@ -109,7 +110,15 @@ async function testFileObservable(actions: (path: string) => Promise<void>): Pro
             requestSentinel
                 .pipe(
                     takeUntil(stateEvents.pipe(filter(state => state === "SeenSentinel"))),
-                    mergeWith(stateEvents, fileEvents),
+                    mergeWith(
+                        stateEvents,
+                        fileEvents,
+                        errorEvents.pipe(
+                            map(reason => {
+                                throw reason;
+                            })
+                        )
+                    ),
                     scan(
                         (
                             previous: {
@@ -158,7 +167,10 @@ async function testFileObservable(actions: (path: string) => Promise<void>): Pro
                                 stateEvents.next("Ready");
                             }
                         } else if (event === "Ready") {
-                            void actions(path).then(() => void stateEvents.next("Done"));
+                            void actions(path).then(
+                                () => void stateEvents.next("Done"),
+                                reason => void errorEvents.next(reason)
+                            );
                         } else if (
                             typeof event === "object" &&
                             (state === "Init" || state === "SeenSentinel")
