@@ -90,6 +90,8 @@ test("observeFileEvents", async t => {
         os.platform() === "linux" ? ["change", "rename", "rename"] : ["rename"]
     );
 
+    // On MacOS, no events are ever emitted when watching a directory non-recursively.
+    // That makes this functionality essentially useless on MacOS.
     t.deepEqual(await testDirectoryEvents(async () => {}), []);
     t.deepEqual(
         await testDirectoryEvents(async path => {
