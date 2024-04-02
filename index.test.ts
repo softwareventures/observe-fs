@@ -69,7 +69,7 @@ test("observeFileEvents", async t => {
                 await rename(path, `${path}_renamed`);
             })
         ).map(({event}) => event),
-        os.platform() === "win32" ? ["rename"] : ["change", "rename", "rename"]
+        ["rename"]
     );
     t.deepEqual(
         (
@@ -77,7 +77,7 @@ test("observeFileEvents", async t => {
                 await rm(path);
             })
         ).map(({event}) => event),
-        ["rename"]
+        os.platform() === "win32" ? ["rename"] : ["change", "rename", "rename"]
     );
 });
 
