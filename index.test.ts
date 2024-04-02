@@ -77,7 +77,7 @@ test("observeFileEvents", async t => {
                 await rm(path);
             })
         ).map(({event}) => event),
-        os.platform() === "win32" ? ["rename"] : ["change", "rename", "rename"]
+        os.platform() === "linux" ? ["change", "rename", "rename"] : ["rename"]
     );
 });
 
