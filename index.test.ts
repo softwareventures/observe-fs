@@ -145,12 +145,24 @@ test("observeFileEvents", async t => {
             {event: "rename", path: "b"}
         ]
     );
-    await t.throwsAsync(
-        testDirectoryEvents(async path => {
-            await rmdir(path);
-        }),
-        {code: "EPERM"}
-    );
+    if (os.platform() === "win32") {
+        await t.throwsAsync(
+            testDirectoryEvents(async path => {
+                await rmdir(path);
+            }),
+            {code: "EPERM"}
+        );
+    } else {
+        // The "path" field in both events will be the name of the directory we are watching.
+        t.deepEqual(
+            (
+                await testDirectoryEvents(async path => {
+                    await rmdir(path);
+                })
+            ).map(({event}) => event),
+            ["rename", "rename"]
+        );
+    }
 });
 
 async function testFileEvents(actions: (path: string) => Promise<void>): Promise<FileEvent[]> {
