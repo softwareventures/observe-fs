@@ -1,4 +1,5 @@
 import {open, rename, rm} from "node:fs/promises";
+import * as os from "node:os";
 import test from "ava";
 import {temporaryFileTask} from "tempy";
 import {filter, BehaviorSubject, EMPTY, firstValueFrom, interval, of} from "rxjs";
@@ -18,7 +19,6 @@ import {
 } from "rxjs/operators";
 import type {FileEvent} from "./index.js";
 import {observeFileEvents} from "./index.js";
-import * as os from "os";
 
 test("observeFileEvents", async t => {
     t.deepEqual(await testFileObservable(async () => {}), []);
