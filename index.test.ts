@@ -1,4 +1,4 @@
-import {open} from "node:fs/promises";
+import {open, rename, rm} from "node:fs/promises";
 import test from "ava";
 import {temporaryFileTask} from "tempy";
 import {filter, BehaviorSubject, EMPTY, firstValueFrom, interval, of} from "rxjs";
@@ -21,6 +21,63 @@ import {observeFileEvents} from "./index.js";
 
 test("observeFileEvents", async t => {
     t.deepEqual(await testFileObservable(async () => {}), []);
+    t.deepEqual(
+        (
+            await testFileObservable(async path => {
+                const file = await open(path, "a");
+                await file.close();
+            })
+        ).map(({event}) => event),
+        []
+    );
+    t.deepEqual(
+        (
+            await testFileObservable(async path => {
+                const file = await open(path, "w");
+                await file.close();
+            })
+        ).map(({event}) => event),
+        ["change"]
+    );
+    t.deepEqual(
+        (
+            await testFileObservable(async path => {
+                const file = await open(path, "w");
+                await file.write("test");
+                await file.close();
+            })
+        ).map(({event}) => event),
+        ["change", "change"]
+    );
+    t.deepEqual(
+        (
+            await testFileObservable(async path => {
+                const file = await open(path, "w");
+                await file.write("test");
+                await file.close();
+                const file2 = await open(path, "a");
+                await file2.write("test2");
+                await file2.close();
+            })
+        ).map(({event}) => event),
+        ["change", "change", "change"]
+    );
+    t.deepEqual(
+        (
+            await testFileObservable(async path => {
+                await rename(path, `${path}_renamed`);
+            })
+        ).map(({event}) => event),
+        ["rename"]
+    );
+    t.deepEqual(
+        (
+            await testFileObservable(async path => {
+                await rm(path);
+            })
+        ).map(({event}) => event),
+        ["rename"]
+    );
 });
 
 type TestFileState = "Init" | "SeenSentinel" | "Ready" | "Done";
