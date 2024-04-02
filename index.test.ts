@@ -95,7 +95,7 @@ async function testFileObservable(actions: (path: string) => Promise<void>): Pro
     return temporaryFileTask(async path => {
         const stateEvents = new BehaviorSubject<TestFileState>("Init");
         const fileEvents = observeFileEvents(path);
-        const requestSentinel = interval(10).pipe(map(() => "RequestSentinel" as const));
+        const requestSentinel = interval(1).pipe(map(() => "RequestSentinel" as const));
 
         const writeEmptyFile = async (): Promise<void> => {
             const file = await open(path, "w");
@@ -134,7 +134,7 @@ async function testFileObservable(actions: (path: string) => Promise<void>): Pro
                             concatWith(
                                 event === "SeenSentinel"
                                     ? of({event: "DelayAfterSeenSentinel", state} as const).pipe(
-                                          delay(20)
+                                          delay(2)
                                       )
                                     : EMPTY
                             )
@@ -142,7 +142,7 @@ async function testFileObservable(actions: (path: string) => Promise<void>): Pro
                     ),
                     mergeMap(({event, state}) =>
                         event === "Done"
-                            ? of({event, state}).pipe(delay(20))
+                            ? of({event, state}).pipe(delay(4))
                             : of({
                                   event,
                                   state
