@@ -1003,7 +1003,7 @@ __metadata:
     "@softwareventures/prettier-config": "npm:4.0.0"
     "@softwareventures/semantic-release-config": "npm:4.1.0"
     "@softwareventures/tsconfig": "npm:7.1.1"
-    "@types/node": "npm:17.0.45"
+    "@types/node": "npm:^18.0.0 || ^20.0.0 || >=21.0.0"
     "@typescript-eslint/eslint-plugin": "npm:7.4.0"
     "@typescript-eslint/parser": "npm:7.4.0"
     ava: "npm:6.1.2"
@@ -1019,7 +1019,9 @@ __metadata:
     inquirer: "npm:9.2.17"
     pinst: "npm:3.0.0"
     prettier: "npm:3.2.5"
+    rxjs: "npm:^6.0.0 || ^7.0.0"
     semantic-release: "npm:23.0.6"
+    tempy: "npm:3.1.0"
     tsimp: "npm:2.0.11"
     tslib: "npm:^2.6.2"
     typescript: "npm:5.4.3"
@@ -1128,19 +1130,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*":
+"@types/node@npm:*, @types/node@npm:^18.0.0 || ^20.0.0 || >=21.0.0":
   version: 20.12.2
   resolution: "@types/node@npm:20.12.2"
   dependencies:
     undici-types: "npm:~5.26.4"
   checksum: 10c0/bb47d115a8f95aadebdd6403fee16d149d6b5568ad53bacc42df34c2d572561e36ba47b05f7f68bada43752d7369b470a90df65b646af7502dfb799a21b4fca7
-  languageName: node
-  linkType: hard
-
-"@types/node@npm:17.0.45":
-  version: 17.0.45
-  resolution: "@types/node@npm:17.0.45"
-  checksum: 10c0/0db377133d709b33a47892581a21a41cd7958f22723a3cc6c71d55ac018121382de42fbfc7970d5ae3e7819dbe5f40e1c6a5174aedf7e7964e9cb8fa72b580b0
   languageName: node
   linkType: hard
 
@@ -6676,7 +6671,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rxjs@npm:7.8.1, rxjs@npm:^7.5.5, rxjs@npm:^7.8.1":
+"rxjs@npm:7.8.1, rxjs@npm:^6.0.0 || ^7.0.0, rxjs@npm:^7.5.5, rxjs@npm:^7.8.1":
   version: 7.8.1
   resolution: "rxjs@npm:7.8.1"
   dependencies:
@@ -7328,7 +7323,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tempy@npm:^3.0.0":
+"tempy@npm:3.1.0, tempy@npm:^3.0.0":
   version: 3.1.0
   resolution: "tempy@npm:3.1.0"
   dependencies:
