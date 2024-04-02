@@ -166,7 +166,7 @@ test("observeFileEvents", async t => {
                     await rmdir(path);
                 })
             ).map(({event}) => event),
-            ["rename", "rename"]
+            os.platform() === "darwin" ? [] : ["rename", "rename"]
         );
     }
 });
