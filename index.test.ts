@@ -18,6 +18,7 @@ import {
 } from "rxjs/operators";
 import type {FileEvent} from "./index.js";
 import {observeFileEvents} from "./index.js";
+import * as os from "os";
 
 test("observeFileEvents", async t => {
     t.deepEqual(await testFileObservable(async () => {}), []);
@@ -68,7 +69,7 @@ test("observeFileEvents", async t => {
                 await rename(path, `${path}_renamed`);
             })
         ).map(({event}) => event),
-        ["rename"]
+        os.platform() === "win32" ? ["rename"] : ["change", "rename", "rename"]
     );
     t.deepEqual(
         (
