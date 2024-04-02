@@ -61,7 +61,7 @@ test("observeFileEvents", async t => {
                 await file2.close();
             })
         ).map(({event}) => event),
-        ["change", "change", "change"]
+        ["change", "change", "change", ...(os.platform() === "darwin" ? ["rename"] : [])]
     );
     t.deepEqual(
         (
