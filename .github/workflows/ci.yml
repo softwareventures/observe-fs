@@ -8,9 +8,10 @@ env:
 jobs:
   build-and-test:
     name: Build and Test
-    runs-on: ubuntu-latest
+    runs-on: ${{matrix.os}}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [18.x, 20.x, 21.x]
     steps:
       - name: git checkout
