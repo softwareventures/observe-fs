@@ -17,8 +17,11 @@ import {
     toArray,
     tap
 } from "rxjs/operators";
+import {notNull} from "@softwareventures/nullable";
 import type {FileEvent} from "./index.js";
 import {observeFileEvents} from "./index.js";
+
+const nodeMajorVersion = parseInt(notNull(process.version.split(".")[0]), 10);
 
 test("observeFileEvents", async t => {
     t.deepEqual(await testFileObservable(async () => {}), []);
@@ -61,7 +64,12 @@ test("observeFileEvents", async t => {
                 await file2.close();
             })
         ).map(({event}) => event),
-        ["change", "change", "change", ...(os.platform() === "darwin" ? ["rename"] : [])]
+        [
+            "change",
+            "change",
+            "change",
+            ...(os.platform() === "darwin" && nodeMajorVersion >= 20 ? ["rename"] : [])
+        ]
     );
     t.deepEqual(
         (
