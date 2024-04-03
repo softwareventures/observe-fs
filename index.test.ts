@@ -1,4 +1,4 @@
-import {open, rename, rm, rmdir} from "node:fs/promises";
+import {mkdir, open, rename, rm, rmdir} from "node:fs/promises";
 import * as os from "node:os";
 import {resolve} from "node:path";
 import test from "ava";
@@ -163,6 +163,25 @@ test("observeFileEvents: directory non-recursive", async t => {
                   {event: "rename", path: "a"},
                   {event: "rename", path: "c"},
                   {event: "rename", path: "b"}
+              ]
+    );
+    t.deepEqual(
+        await testDirectoryEvents(async path => {
+            const pathA = resolve(path, "a");
+            const pathB = resolve(pathA, "b");
+            const pathC = resolve(path, "c");
+            await mkdir(pathA);
+            const file = await open(pathB, "w");
+            await file.close();
+            await rename(pathB, pathC);
+            await rmdir(pathA);
+        }),
+        os.platform() === "darwin"
+            ? []
+            : [
+                  {event: "rename", path: "a"},
+                  {event: "rename", path: "c"},
+                  {event: "rename", path: "a"}
               ]
     );
     if (os.platform() === "win32") {
