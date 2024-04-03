@@ -92,9 +92,19 @@ test("observeFileEvents: file", async t => {
     );
 });
 
-// "change" events are sometimes, but not always, repeated when observing a directory.
+// When observing a directory, both "rename" and "change" events are sometimes
+// followed by an additional spurious "change" event for the same path.
+// This function also omits genuine "change" events that follow a "rename"
+// event, but it's good enough for testing.
 function omitDuplicateChangeEvents(events: readonly FileEvent[]): FileEvent[] {
-    return fold(events, (accumulator: FileEvent[], event) => event.event === "change" && last(accumulator)?.event === "change" && last(accumulator)?.path === event.path ? accumulator : push(accumulator, event), []);
+    return fold(
+        events,
+        (accumulator: FileEvent[], event) =>
+            event.event === "change" && last(accumulator)?.path === event.path
+                ? accumulator
+                : push(accumulator, event),
+        []
+    );
 }
 
 test("observeFileEvents: directory non-recursive", async t => {
@@ -119,8 +129,8 @@ test("observeFileEvents: directory non-recursive", async t => {
         os.platform() === "darwin"
             ? []
             : [
-                  {event: "rename", path: "a"},
-                  {event: "change", path: "a"}
+                  {event: "rename", path: "a"}
+                  // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
               ]
     );
     t.deepEqual(
@@ -138,9 +148,9 @@ test("observeFileEvents: directory non-recursive", async t => {
             ? []
             : [
                   {event: "rename", path: "a"},
-                  {event: "change", path: "a"},
-                  {event: "rename", path: "b"},
-                  {event: "change", path: "b"}
+                  // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
+                  {event: "rename", path: "b"}
+                  // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
               ]
     );
     t.deepEqual(
@@ -166,16 +176,18 @@ test("observeFileEvents: directory non-recursive", async t => {
               ]
     );
     t.deepEqual(
-        await testDirectoryEvents(async path => {
-            const pathA = resolve(path, "a");
-            const pathB = resolve(pathA, "b");
-            const pathC = resolve(path, "c");
-            await mkdir(pathA);
-            const file = await open(pathB, "w");
-            await file.close();
-            await rename(pathB, pathC);
-            await rmdir(pathA);
-        }),
+        omitDuplicateChangeEvents(
+            await testDirectoryEvents(async path => {
+                const pathA = resolve(path, "a");
+                const pathB = resolve(pathA, "b");
+                const pathC = resolve(path, "c");
+                await mkdir(pathA);
+                const file = await open(pathB, "w");
+                await file.close();
+                await rename(pathB, pathC);
+                await rmdir(pathA);
+            })
+        ),
         os.platform() === "darwin"
             ? []
             : [
