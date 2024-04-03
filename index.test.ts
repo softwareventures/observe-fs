@@ -20,6 +20,7 @@ import {
     tap
 } from "rxjs/operators";
 import {notNull} from "@softwareventures/nullable";
+import {fold, last, push} from "@softwareventures/array";
 import type {FileEvent} from "./index.js";
 import {observeFileEvents} from "./index.js";
 
@@ -91,6 +92,11 @@ test("observeFileEvents: file", async t => {
     );
 });
 
+// "change" events are sometimes, but not always, repeated when observing a directory.
+function omitDuplicateChangeEvents(events: readonly FileEvent[]): FileEvent[] {
+    return fold(events, (accumulator: FileEvent[], event) => event.event === "change" && last(accumulator)?.event === "change" && last(accumulator)?.path === event.path ? accumulator : push(accumulator, event), []);
+}
+
 test("observeFileEvents: directory non-recursive", async t => {
     // On MacOS, no events are ever emitted when watching a directory non-recursively.
     // That makes this functionality essentially useless on MacOS.
@@ -103,11 +109,13 @@ test("observeFileEvents: directory non-recursive", async t => {
         os.platform() === "darwin" ? [] : [{event: "rename", path: "a"}]
     );
     t.deepEqual(
-        await testDirectoryEvents(async path => {
-            const file = await open(resolve(path, "a"), "w");
-            await file.write("test");
-            await file.close();
-        }),
+        omitDuplicateChangeEvents(
+            await testDirectoryEvents(async path => {
+                const file = await open(resolve(path, "a"), "w");
+                await file.write("test");
+                await file.close();
+            })
+        ),
         os.platform() === "darwin"
             ? []
             : [
@@ -116,14 +124,16 @@ test("observeFileEvents: directory non-recursive", async t => {
               ]
     );
     t.deepEqual(
-        await testDirectoryEvents(async path => {
-            const file = await open(resolve(path, "a"), "w");
-            await file.write("test");
-            await file.close();
-            const file2 = await open(resolve(path, "b"), "w");
-            await file2.write("test2");
-            await file2.close();
-        }),
+        omitDuplicateChangeEvents(
+            await testDirectoryEvents(async path => {
+                const file = await open(resolve(path, "a"), "w");
+                await file.write("test");
+                await file.close();
+                const file2 = await open(resolve(path, "b"), "w");
+                await file2.write("test2");
+                await file2.close();
+            })
+        ),
         os.platform() === "darwin"
             ? []
             : [
