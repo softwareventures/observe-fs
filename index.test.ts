@@ -25,7 +25,7 @@ import {observeFileEvents} from "./index.js";
 
 const nodeMajorVersion = parseInt(notNull(process.version.split(".")[0]), 10);
 
-test("observeFileEvents", async t => {
+test("observeFileEvents: file", async t => {
     t.deepEqual(await testFileEvents(async () => {}), []);
     t.deepEqual(
         (
@@ -89,7 +89,9 @@ test("observeFileEvents", async t => {
         ).map(({event}) => event),
         os.platform() === "linux" ? ["change", "rename", "rename"] : ["rename"]
     );
+});
 
+test("observeFileEvents: directory non-recursive", async t => {
     // On MacOS, no events are ever emitted when watching a directory non-recursively.
     // That makes this functionality essentially useless on MacOS.
     t.deepEqual(await testDirectoryEvents(async () => {}), []);
