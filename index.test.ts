@@ -26,8 +26,11 @@ import {observeFileEvents} from "./index.js";
 
 const nodeMajorVersion = parseInt(notNull(process.version.split(".")[0]), 10);
 
-test("observeFileEvents: file", async t => {
+test("observeFileEvents: file no actions", async t => {
     t.deepEqual(await testFileEvents(async () => {}), []);
+});
+
+test("observeFileEvents: open file for append and close", async t => {
     t.deepEqual(
         (
             await testFileEvents(async path => {
@@ -37,6 +40,9 @@ test("observeFileEvents: file", async t => {
         ).map(({event}) => event),
         []
     );
+});
+
+test("observeFileEvents: open file for write and close", async t => {
     t.deepEqual(
         (
             await testFileEvents(async path => {
@@ -46,6 +52,9 @@ test("observeFileEvents: file", async t => {
         ).map(({event}) => event),
         ["change"]
     );
+});
+
+test("observeFileEvents: open file for write, write text and close", async t => {
     t.deepEqual(
         (
             await testFileEvents(async path => {
@@ -56,6 +65,9 @@ test("observeFileEvents: file", async t => {
         ).map(({event}) => event),
         ["change", "change"]
     );
+});
+
+test("observeFileEvents: open file for write, write text, close, open same file for append, write text, and close", async t => {
     t.deepEqual(
         (
             await testFileEvents(async path => {
@@ -74,6 +86,9 @@ test("observeFileEvents: file", async t => {
             ...(os.platform() === "darwin" && nodeMajorVersion >= 20 ? ["rename"] : [])
         ]
     );
+});
+
+test("observeFileEvents: rename file", async t => {
     t.deepEqual(
         (
             await testFileEvents(async path => {
@@ -82,6 +97,9 @@ test("observeFileEvents: file", async t => {
         ).map(({event}) => event),
         ["rename"]
     );
+});
+
+test("observeFileEvents: delete file", async t => {
     t.deepEqual(
         (
             await testFileEvents(async path => {
@@ -107,10 +125,15 @@ function omitDuplicateChangeEvents(events: readonly FileEvent[]): FileEvent[] {
     );
 }
 
-test("observeFileEvents: directory non-recursive", async t => {
+test("observeFileEvents: observe directory non-recursive, no actions", async t => {
     // On MacOS, no events are ever emitted when watching a directory non-recursively.
     // That makes this functionality essentially useless on MacOS.
     t.deepEqual(await testDirectoryEvents(async () => {}), []);
+});
+
+test("observeFileEvents: observe directory non-recursive, open file for write and close", async t => {
+    // On MacOS, no events are ever emitted when watching a directory non-recursively.
+    // That makes this functionality essentially useless on MacOS.
     t.deepEqual(
         await testDirectoryEvents(async path => {
             const file = await open(resolve(path, "a"), "w");
@@ -118,6 +141,9 @@ test("observeFileEvents: directory non-recursive", async t => {
         }),
         os.platform() === "darwin" ? [] : [{event: "rename", path: "a"}]
     );
+});
+
+test("observeFileEvents: observe directory non-recursive, open file for write, write text, and close", async t => {
     t.deepEqual(
         omitDuplicateChangeEvents(
             await testDirectoryEvents(async path => {
@@ -133,6 +159,9 @@ test("observeFileEvents: directory non-recursive", async t => {
                   // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
               ]
     );
+});
+
+test("observeFileEvents: observe directory non-recursive, open file for write, write text, close, open another file for write, write text, and close", async t => {
     t.deepEqual(
         omitDuplicateChangeEvents(
             await testDirectoryEvents(async path => {
@@ -153,6 +182,9 @@ test("observeFileEvents: directory non-recursive", async t => {
                   // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
               ]
     );
+});
+
+test("observeFileEvents: observe directory non-recursive, open file for write, close, open another file for write, close, rename first file", async t => {
     t.deepEqual(
         await testDirectoryEvents(async path => {
             const pathA = resolve(path, "a");
@@ -175,6 +207,9 @@ test("observeFileEvents: directory non-recursive", async t => {
                   {event: "rename", path: "b"}
               ]
     );
+});
+
+test("observeFileEvents: observe directory non-recursive, make inner directory, open file for write in inner directory, close, move file to observed directory", async t => {
     t.deepEqual(
         omitDuplicateChangeEvents(
             await testDirectoryEvents(async path => {
@@ -196,6 +231,9 @@ test("observeFileEvents: directory non-recursive", async t => {
                   {event: "rename", path: "a"}
               ]
     );
+});
+
+test("observeFileEvents: observe directory non-recursive, delete observed directory", async t => {
     if (os.platform() === "win32") {
         await t.throwsAsync(
             testDirectoryEvents(async path => {
@@ -218,8 +256,11 @@ test("observeFileEvents: directory non-recursive", async t => {
 
 // Recursive directory observation is unavailable on Linux
 if (os.platform() !== "linux") {
-    test("observeFileEvents: directory recursive", async t => {
+    test("observeFileEvents: observe directory recursive, no actions", async t => {
         t.deepEqual(await testDirectoryEvents(async () => {}, true), []);
+    });
+
+    test("observeFileEvents: observe directory recursive, open file for write and close", async t => {
         t.deepEqual(
             omitDuplicateChangeEvents(
                 await testDirectoryEvents(async path => {
@@ -229,6 +270,9 @@ if (os.platform() !== "linux") {
             ),
             [{event: "rename", path: "a"}]
         );
+    });
+
+    test("observeFileEvents: observe directory recursive, open file for write, write text, and close", async t => {
         t.deepEqual(
             omitDuplicateChangeEvents(
                 await testDirectoryEvents(async path => {
@@ -242,6 +286,9 @@ if (os.platform() !== "linux") {
                 // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
             ]
         );
+    });
+
+    test("observeFileEvents: observe directory recursive, open file for write, write text, close, open another file for write, write text, close", async t => {
         t.deepEqual(
             omitDuplicateChangeEvents(
                 await testDirectoryEvents(async path => {
@@ -260,6 +307,9 @@ if (os.platform() !== "linux") {
                 // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
             ]
         );
+    });
+
+    test("observeFileEvents: observe directory recursive, open file for write, close, open another file for write, close, rename first file", async t => {
         t.deepEqual(
             omitDuplicateChangeEvents(
                 await testDirectoryEvents(async path => {
@@ -282,6 +332,9 @@ if (os.platform() !== "linux") {
                 {event: "rename", path: "b"}
             ]
         );
+    });
+
+    test("observeFileEvents: observe directory recursive, make inner directory, open file for write in inner directory, close, move file to observed directory, delete inner directory", async t => {
         t.deepEqual(
             fold(
                 await testDirectoryEvents(async path => {
@@ -312,6 +365,9 @@ if (os.platform() !== "linux") {
                 {event: "rename", path: "a"}
             ]
         );
+    });
+
+    test("observeFileEvents: observe directory recursive, delete observed directory", async t => {
         if (os.platform() === "win32") {
             await t.throwsAsync(
                 testDirectoryEvents(async path => {
