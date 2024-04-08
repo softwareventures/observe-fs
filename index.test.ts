@@ -526,15 +526,20 @@ async function testEventsInternal({
                         )
                     )
                 ),
-                mergeMap(({event, state}) =>
-                    event === "Done"
-                        ? of({event, state}).pipe(
-                              delay(
-                                  os.platform() === "win32" || os.platform() === "linux" ? 20 : 200
-                              )
-                          )
-                        : of({event, state})
-                ),
+                switchMap(({event, state}) => {
+                    if (state === "Done") {
+                        const delayDone = of({event: "Done", state: "Done"}).pipe(
+                            delay(os.platform() === "win32" || os.platform() === "linux" ? 20 : 200)
+                        );
+                        if (event === "Done") {
+                            return delayDone;
+                        } else {
+                            return of({event, state}).pipe(concatWith(delayDone));
+                        }
+                    } else {
+                        return of({event, state});
+                    }
+                }),
                 tap(({event, state}) => {
                     if (event === "RequestSentinel") {
                         if (state === "Init") {
