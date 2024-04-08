@@ -391,23 +391,33 @@ if (os.platform() !== "linux") {
             await rmdir(pathA);
         }, true);
         if (os.platform() === "win32") {
-            // Creating a file in the watched directory sometimes, but not always,
-            // generates a "change" event for the watched directory.
+            // Creating or deleting a file in the watched directory sometimes,
+            // but not always, generates a "change" event for the watched directory.
             const [events1, afterEvents1] = partitionWhile(events, event => event.path === "a");
             const [events2, afterEvents2] = partitionWhile(
                 afterEvents1,
                 event => event.path === `a${sep}b`
             );
-            const [events3, otherEvents] = partitionWhile(
+            const [events3, afterEvents3] = partitionWhile(
                 afterEvents2,
+                event => event.path === "a"
+            );
+            const [events4, afterEvents4] = partitionWhile(
+                afterEvents3,
+                event => event.path === `a${sep}b`
+            );
+            const [events5, otherEvents] = partitionWhile(
+                afterEvents4,
                 event => event.path === "a"
             );
             t.deepEqual(events1, [{event: "rename", path: "a"}]);
             t.deepEqual(events2, [{event: "rename", path: `a${sep}b`}]);
             t.true(events3.length <= 1);
             t.true(all(events3, event => event.event === "change"));
+            t.deepEqual(events4, [{event: "rename", path: `a${sep}b`}]);
+            t.true(events5.length <= 1);
+            t.true(all(events5, event => event.event === "change"));
             t.deepEqual(otherEvents, [
-                {event: "rename", path: `a${sep}b`},
                 {event: "rename", path: "c"},
                 {event: "rename", path: "a"}
             ]);
