@@ -458,7 +458,9 @@ async function testEventsInternal({
     actions,
     recursive = false
 }: TestEventsInternalOptions): Promise<FileEvent[]> {
-    const requestSentinelEvents = interval(1).pipe(map(() => "RequestSentinel" as const));
+    const requestSentinelEvents = interval(
+        os.platform() === "win32" || os.platform() === "linux" ? 1 : 10
+    ).pipe(map(() => "RequestSentinel" as const));
     const internalEvents = new Subject<InternalEvent>();
     const fileEvents = observeFileEvents({path, recursive});
 
@@ -514,14 +516,24 @@ async function testEventsInternal({
                         concatWith(
                             event === "SeenWrittenSentinel"
                                 ? of({event: "DelayAfterSeenSentinel", state} as const).pipe(
-                                      delay(2)
+                                      delay(
+                                          os.platform() === "win32" || os.platform() === "linux"
+                                              ? 4
+                                              : 100
+                                      )
                                   )
                                 : EMPTY
                         )
                     )
                 ),
                 mergeMap(({event, state}) =>
-                    event === "Done" ? of({event, state}).pipe(delay(4)) : of({event, state})
+                    event === "Done"
+                        ? of({event, state}).pipe(
+                              delay(
+                                  os.platform() === "win32" || os.platform() === "linux" ? 20 : 200
+                              )
+                          )
+                        : of({event, state})
                 ),
                 tap(({event, state}) => {
                     if (event === "RequestSentinel") {
