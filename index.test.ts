@@ -125,20 +125,16 @@ function omitDuplicateChangeEvents(events: readonly FileEvent[]): FileEvent[] {
 }
 
 test("observeFileEvents: observe directory non-recursive, no actions", async t => {
-    // On MacOS, no events are ever emitted when watching a directory non-recursively.
-    // That makes this functionality essentially useless on MacOS.
     t.deepEqual(await testDirectoryEvents(async () => {}), []);
 });
 
 test("observeFileEvents: observe directory non-recursive, open file for write and close", async t => {
-    // On MacOS, no events are ever emitted when watching a directory non-recursively.
-    // That makes this functionality essentially useless on MacOS.
     t.deepEqual(
         await testDirectoryEvents(async path => {
             const file = await open(resolve(path, "a"), "w");
             await file.close();
         }),
-        os.platform() === "darwin" ? [] : [{event: "rename", path: "a"}]
+        [{event: "rename", path: "a"}]
     );
 });
 
@@ -151,12 +147,10 @@ test("observeFileEvents: observe directory non-recursive, open file for write, w
                 await file.close();
             })
         ),
-        os.platform() === "darwin"
-            ? []
-            : [
-                  {event: "rename", path: "a"}
-                  // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
-              ]
+        [
+            {event: "rename", path: "a"}
+            // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
+        ]
     );
 });
 
@@ -172,14 +166,12 @@ test("observeFileEvents: observe directory non-recursive, open file for write, w
                 await file2.close();
             })
         ),
-        os.platform() === "darwin"
-            ? []
-            : [
-                  {event: "rename", path: "a"},
-                  // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
-                  {event: "rename", path: "b"}
-                  // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
-              ]
+        [
+            {event: "rename", path: "a"},
+            // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
+            {event: "rename", path: "b"}
+            // Followed by a "change" event which is omitted by omitDuplicateChangeEvents
+        ]
     );
 });
 
@@ -196,15 +188,13 @@ test("observeFileEvents: observe directory non-recursive, open file for write, c
             await rename(pathA, pathC);
             await rm(pathB);
         }),
-        os.platform() === "darwin"
-            ? []
-            : [
-                  {event: "rename", path: "a"},
-                  {event: "rename", path: "b"},
-                  {event: "rename", path: "a"},
-                  {event: "rename", path: "c"},
-                  {event: "rename", path: "b"}
-              ]
+        [
+            {event: "rename", path: "a"},
+            {event: "rename", path: "b"},
+            {event: "rename", path: "a"},
+            {event: "rename", path: "c"},
+            {event: "rename", path: "b"}
+        ]
     );
 });
 
@@ -222,13 +212,11 @@ test("observeFileEvents: observe directory non-recursive, make inner directory, 
                 await rmdir(pathA);
             })
         ),
-        os.platform() === "darwin"
-            ? []
-            : [
-                  {event: "rename", path: "a"},
-                  {event: "rename", path: "c"},
-                  {event: "rename", path: "a"}
-              ]
+        [
+            {event: "rename", path: "a"},
+            {event: "rename", path: "c"},
+            {event: "rename", path: "a"}
+        ]
     );
 });
 
@@ -248,7 +236,7 @@ test("observeFileEvents: observe directory non-recursive, delete observed direct
                     await rmdir(path);
                 })
             ),
-            os.platform() === "darwin" ? [] : ["rename", "rename"]
+            ["rename", "rename"]
         );
     }
 });
