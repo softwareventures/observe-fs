@@ -32,12 +32,10 @@ test("observeFileEvents: file no actions", async t => {
 
 test("observeFileEvents: open file for append and close", async t => {
     t.deepEqual(
-        (
-            await testFileEvents(async path => {
-                const file = await open(path, "a");
-                await file.close();
-            })
-        ).map(({event}) => event),
+        await testFileEvents(async path => {
+            const file = await open(path, "a");
+            await file.close();
+        }),
         []
     );
 });
