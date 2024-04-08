@@ -78,7 +78,8 @@
     },
     "nodeArguments": [
       "--import=tsimp/import"
-    ]
+    ],
+    "timeout": "40s"
   },
   "release": {
     "extends": "@softwareventures/semantic-release-config"
