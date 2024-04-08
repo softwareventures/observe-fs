@@ -1000,7 +1000,6 @@ __metadata:
     "@commitlint/cz-commitlint": "npm:19.2.0"
     "@softwareventures/array": "npm:7.0.0"
     "@softwareventures/eslint-config": "npm:7.5.0"
-    "@softwareventures/nullable": "npm:3.2.0"
     "@softwareventures/precise-commits": "npm:4.0.5"
     "@softwareventures/prettier-config": "npm:4.0.0"
     "@softwareventures/semantic-release-config": "npm:4.1.0"
