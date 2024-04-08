@@ -410,13 +410,9 @@ if (os.platform() !== "linux") {
                 afterEvents4,
                 event => event.path === "a"
             );
-            const [events6, afterEvents6] = partitionWhile(
+            const [events6, otherEvents] = partitionWhile(
                 afterEvents5,
                 event => event.path === "c"
-            );
-            const [events7, otherEvents] = partitionWhile(
-                afterEvents6,
-                event => event.path === "a"
             );
             t.deepEqual(events1, [{event: "rename", path: "a"}]);
             t.deepEqual(events2, [{event: "rename", path: `a${sep}b`}]);
@@ -426,9 +422,14 @@ if (os.platform() !== "linux") {
             t.true(events5.length <= 1);
             t.true(all(events5, event => event.event === "change"));
             t.deepEqual(events6, [{event: "rename", path: "c"}]);
-            t.true(events7.length <= 1);
-            t.true(all(events7, event => event.event === "change"));
-            t.deepEqual(otherEvents, [{event: "rename", path: "a"}]);
+            if (otherEvents.length === 1) {
+                t.deepEqual(otherEvents, [{event: "rename", path: "a"}]);
+            } else {
+                t.deepEqual(otherEvents, [
+                    {event: "change", path: "a"},
+                    {event: "rename", path: "a"}
+                ]);
+            }
         } else {
             // When a file is moved, renamed, or deleted, sometimes the events
             // pertaining to the file before it was moved, renamed, or deleted
