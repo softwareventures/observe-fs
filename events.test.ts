@@ -30,8 +30,9 @@ import {
     partitionWhile,
     tail
 } from "@softwareventures/array";
-import type {FileEvent} from "./index.js";
-import {observeFileEvents} from "./index.js";
+
+import type {FileEvent} from "./events.js";
+import {observeFileEvents} from "./events.js";
 
 test("observeFileEvents: file no actions", async t => {
     t.deepEqual(await testFileEvents(async () => {}), []);
