@@ -1,7 +1,6 @@
 import {mkdir, open, rename, rm, rmdir} from "node:fs/promises";
 import * as os from "node:os";
-import {resolve, sep} from "node:path";
-import type {WatchEventType} from "node:fs";
+import {basename, resolve, sep} from "node:path";
 import test from "ava";
 import {temporaryDirectoryTask, temporaryFileTask} from "tempy";
 import {EMPTY, firstValueFrom, interval, of, Subject} from "rxjs";
@@ -35,46 +34,43 @@ import type {FileEvent} from "./events.js";
 import {observeFileEvents} from "./events.js";
 
 test("observeFileEvents: file no actions", async t => {
-    t.deepEqual(await testFileEvents(async () => {}), []);
+    const {events} = await testFileEvents(async () => {});
+    t.deepEqual(events, []);
 });
 
 test("observeFileEvents: open file for append and close", async t => {
-    t.deepEqual(
-        await testFileEvents(async path => {
-            const file = await open(path, "a");
-            await file.close();
-        }),
-        []
-    );
+    const {events} = await testFileEvents(async path => {
+        const file = await open(path, "a");
+        await file.close();
+    });
+    t.deepEqual(events, []);
 });
 
 test("observeFileEvents: open file for write and close", async t => {
-    t.deepEqual(
-        eventNamesOnly(
-            await testFileEvents(async path => {
-                const file = await open(path, "w");
-                await file.close();
-            })
-        ),
-        ["change"]
-    );
+    const {testFilename, events} = await testFileEvents(async path => {
+        const file = await open(path, "w");
+        await file.close();
+    });
+    t.deepEqual(events, [{event: "change", path: testFilename}]);
 });
 
 test("observeFileEvents: open file for write, write text and close", async t => {
-    const events = await testFileEvents(async path => {
+    const {testFilename, events} = await testFileEvents(async path => {
         const file = await open(path, "w");
         await file.write("test");
         await file.close();
     });
     if (os.platform() === "win32" || os.platform() === "linux") {
-        t.deepEqual(eventNamesOnly(omitDuplicateChange(events)), ["change"]);
+        t.deepEqual(omitDuplicateChange(events), [{event: "change", path: testFilename}]);
     } else {
-        t.deepEqual(eventNamesOnly(omitDuplicateChange(omitRenameAfterChange(events))), ["change"]);
+        t.deepEqual(omitDuplicateChange(omitRenameAfterChange(events)), [
+            {event: "change", path: testFilename}
+        ]);
     }
 });
 
 test("observeFileEvents: open file for write, write text, close, open same file for append, write text, and close", async t => {
-    const events = await testFileEvents(async path => {
+    const {testFilename, events} = await testFileEvents(async path => {
         const file = await open(path, "w");
         await file.write("test");
         await file.close();
@@ -89,64 +85,65 @@ test("observeFileEvents: open file for write, write text, close, open same file 
     // Since we open and write the file twice, there should be at least
     // two "change" events.
     t.deepEqual(
-        eventNamesOnly(
-            fold(
-                os.platform() === "win32" || os.platform() === "linux"
-                    ? events
-                    : omitRenameAfterChange(events),
-                (accumulator: FileEvent[], event) =>
-                    event.event === "change" &&
-                    last(accumulator)?.event === "change" &&
-                    last(accumulator)?.path === event.path &&
-                    last(initial(accumulator))?.event === "change" &&
-                    last(initial(accumulator))?.path === event.path
-                        ? accumulator
-                        : [...accumulator, event],
-                []
-            )
+        fold(
+            os.platform() === "win32" || os.platform() === "linux"
+                ? events
+                : omitRenameAfterChange(events),
+            (accumulator: FileEvent[], event) =>
+                event.event === "change" &&
+                last(accumulator)?.event === "change" &&
+                last(accumulator)?.path === event.path &&
+                last(initial(accumulator))?.event === "change" &&
+                last(initial(accumulator))?.path === event.path
+                    ? accumulator
+                    : [...accumulator, event],
+            []
         ),
-        ["change", "change"]
+        [
+            {event: "change", path: testFilename},
+            {event: "change", path: testFilename}
+        ]
     );
 });
 
 test("observeFileEvents: rename file", async t => {
-    t.deepEqual(
-        eventNamesOnly(
-            await testFileEvents(async path => {
-                await rename(path, `${path}_renamed`);
-            })
-        ),
-        ["rename"]
-    );
+    const {testFilename, events} = await testFileEvents(async path => {
+        await rename(path, `${path}_renamed`);
+    });
+    t.deepEqual(events, [{event: "rename", path: testFilename}]);
 });
 
 test("observeFileEvents: delete file", async t => {
+    const {testFilename, events} = await testFileEvents(async path => {
+        await rm(path);
+    });
     t.deepEqual(
-        eventNamesOnly(
-            await testFileEvents(async path => {
-                await rm(path);
-            })
-        ),
-        os.platform() === "linux" ? ["change", "rename", "rename"] : ["rename"]
+        events,
+        os.platform() === "linux"
+            ? [
+                  {event: "change", path: testFilename},
+                  {event: "rename", path: testFilename},
+                  {event: "rename", path: testFilename}
+              ]
+            : [{event: "rename", path: testFilename}]
     );
 });
 
 test("observeFileEvents: observe directory non-recursive, no actions", async t => {
-    t.deepEqual(await testDirectoryEvents(async () => {}), []);
+    const {events} = await testDirectoryEvents(async () => {});
+    t.deepEqual(events, []);
 });
 
 test("observeFileEvents: observe directory non-recursive, open file for write and close", async t => {
-    t.deepEqual(
-        await testDirectoryEvents(async path => {
-            const file = await open(resolve(path, "a"), "w");
-            await file.close();
-        }),
-        [{event: "rename", path: "a"}]
-    );
+    const {events} = await testDirectoryEvents(async path => {
+        const file = await open(resolve(path, "a"), "w");
+        await file.close();
+    });
+    t.deepEqual(events, [{event: "rename", path: "a"}]);
 });
 
 test("observeFileEvents: observe directory non-recursive, open file for write, write text, and close", async t => {
-    const events = await testDirectoryEvents(async path => {
+    const {events} = await testDirectoryEvents(async path => {
         const file = await open(resolve(path, "a"), "w");
         await file.write("test");
         await file.close();
@@ -166,7 +163,7 @@ test("observeFileEvents: observe directory non-recursive, open file for write, w
 });
 
 test("observeFileEvents: observe directory non-recursive, open file for write, write text, close, open another file for write, write text, and close", async t => {
-    const events = await testDirectoryEvents(async path => {
+    const {events} = await testDirectoryEvents(async path => {
         const file = await open(resolve(path, "a"), "w");
         await file.write("test");
         await file.close();
@@ -195,7 +192,7 @@ test("observeFileEvents: observe directory non-recursive, open file for write, w
 });
 
 test("observeFileEvents: observe directory non-recursive, open file for write, close, open another file for write, close, rename first file", async t => {
-    const events = await testDirectoryEvents(async path => {
+    const {events} = await testDirectoryEvents(async path => {
         const pathA = resolve(path, "a");
         const pathB = resolve(path, "b");
         const pathC = resolve(path, "c");
@@ -231,7 +228,7 @@ test("observeFileEvents: observe directory non-recursive, open file for write, c
 });
 
 test("observeFileEvents: observe directory non-recursive, make inner directory, open file for write in inner directory, close, move file to observed directory", async t => {
-    const events = await testDirectoryEvents(async path => {
+    const {events} = await testDirectoryEvents(async path => {
         const pathA = resolve(path, "a");
         const pathB = resolve(pathA, "b");
         const pathC = resolve(path, "c");
@@ -271,37 +268,41 @@ test("observeFileEvents: observe directory non-recursive, make inner directory, 
 });
 
 test("observeFileEvents: observe directory non-recursive, delete observed directory", async t => {
-    const events = testDirectoryEvents(async path => {
+    const result = testDirectoryEvents(async path => {
         await rmdir(path);
     });
     if (os.platform() === "win32") {
-        await t.throwsAsync(events, {code: "EPERM"});
+        await t.throwsAsync(result, {code: "EPERM"});
     } else if (os.platform() === "linux") {
         // The "path" field in both events will be the name of the directory we are watching.
-        t.deepEqual(eventNamesOnly(await events), ["rename", "rename"]);
+        const {testFilename, events} = await result;
+        t.deepEqual(events, [
+            {event: "rename", path: testFilename},
+            {event: "rename", path: testFilename}
+        ]);
     } else {
-        t.deepEqual(await events, []);
+        const {events} = await result;
+        t.deepEqual(events, []);
     }
 });
 
 // Recursive directory observation is unavailable on Linux
 if (os.platform() !== "linux") {
     test("observeFileEvents: observe directory recursive, no actions", async t => {
-        t.deepEqual(await testDirectoryEvents(async () => {}, true), []);
+        const {events} = await testDirectoryEvents(async () => {}, true);
+        t.deepEqual(events, []);
     });
 
     test("observeFileEvents: observe directory recursive, open file for write and close", async t => {
-        t.deepEqual(
-            await testDirectoryEvents(async path => {
-                const file = await open(resolve(path, "a"), "w");
-                await file.close();
-            }, true),
-            [{event: "rename", path: "a"}]
-        );
+        const {events} = await testDirectoryEvents(async path => {
+            const file = await open(resolve(path, "a"), "w");
+            await file.close();
+        }, true);
+        t.deepEqual(events, [{event: "rename", path: "a"}]);
     });
 
     test("observeFileEvents: observe directory recursive, open file for write, write text, and close", async t => {
-        const events = await testDirectoryEvents(async path => {
+        const {events} = await testDirectoryEvents(async path => {
             const file = await open(resolve(path, "a"), "w");
             await file.write("test");
             await file.close();
@@ -319,7 +320,7 @@ if (os.platform() !== "linux") {
     });
 
     test("observeFileEvents: observe directory recursive, open file for write, write text, close, open another file for write, write text, close", async t => {
-        const events = await testDirectoryEvents(async path => {
+        const {events} = await testDirectoryEvents(async path => {
             const file = await open(resolve(path, "a"), "w");
             await file.write("test");
             await file.close();
@@ -343,7 +344,7 @@ if (os.platform() !== "linux") {
     });
 
     test("observeFileEvents: observe directory recursive, open file for write, close, open another file for write, close, rename first file", async t => {
-        const events = await testDirectoryEvents(async path => {
+        const {events} = await testDirectoryEvents(async path => {
             const pathA = resolve(path, "a");
             const pathB = resolve(path, "b");
             const pathC = resolve(path, "c");
@@ -381,7 +382,7 @@ if (os.platform() !== "linux") {
     });
 
     test("observeFileEvents: observe directory recursive, make inner directory, open file for write in inner directory, close, move file to observed directory, delete inner directory", async t => {
-        const events = await testDirectoryEvents(async path => {
+        const {events} = await testDirectoryEvents(async path => {
             const pathA = resolve(path, "a");
             const pathB = resolve(pathA, "b");
             const pathC = resolve(path, "c");
@@ -454,18 +455,24 @@ if (os.platform() !== "linux") {
     });
 
     test("observeFileEvents: observe directory recursive, delete observed directory", async t => {
-        const events = testDirectoryEvents(async path => {
+        const result = testDirectoryEvents(async path => {
             await rmdir(path);
         }, true);
         if (os.platform() === "win32") {
-            await t.throwsAsync(events, {code: "EPERM"});
+            await t.throwsAsync(result, {code: "EPERM"});
         } else {
-            t.deepEqual(await events, []);
+            const {events} = await result;
+            t.deepEqual(events, []);
         }
     });
 }
 
-async function testFileEvents(actions: (path: string) => Promise<void>): Promise<FileEvent[]> {
+interface TestEventsResult {
+    readonly testFilename: string;
+    readonly events: readonly FileEvent[];
+}
+
+async function testFileEvents(actions: (path: string) => Promise<void>): Promise<TestEventsResult> {
     return temporaryFileTask(async path => {
         const writeEmptyFile = async (): Promise<void> => {
             const file = await open(path, "w");
@@ -474,14 +481,15 @@ async function testFileEvents(actions: (path: string) => Promise<void>): Promise
 
         await writeEmptyFile();
 
-        return testEventsInternal({path, writeSentinel: writeEmptyFile, actions});
+        const events = await testEventsInternal({path, writeSentinel: writeEmptyFile, actions});
+        return {testFilename: basename(path), events};
     });
 }
 
 async function testDirectoryEvents(
     actions: (path: string) => Promise<void>,
     recursive = false
-): Promise<FileEvent[]> {
+): Promise<TestEventsResult> {
     return temporaryDirectoryTask(async path => {
         const sentinelPath = resolve(path, "sentinel");
         const writeSentinel = async (): Promise<void> => {
@@ -490,7 +498,8 @@ async function testDirectoryEvents(
             await rm(sentinelPath);
         };
 
-        return testEventsInternal({path, writeSentinel, actions, recursive});
+        const events = await testEventsInternal({path, writeSentinel, actions, recursive});
+        return {testFilename: basename(path), events};
     });
 }
 
@@ -649,10 +658,6 @@ async function testEventsInternal({
                 toArray()
             )
     );
-}
-
-function eventNamesOnly(events: readonly FileEvent[]): WatchEventType[] {
-    return events.map(({event}) => event);
 }
 
 function omitChangeAfterRename(events: readonly FileEvent[]): FileEvent[] {
