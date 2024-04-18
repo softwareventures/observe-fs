@@ -1,6 +1,8 @@
 import {mkdir, open, rename, rm, rmdir} from "node:fs/promises";
 import * as os from "node:os";
 import {basename, resolve, sep} from "node:path";
+import type {WatchEventType} from "node:fs";
+import {watch} from "node:fs";
 import test from "ava";
 import {temporaryDirectoryTask, temporaryFileTask} from "tempy";
 import {EMPTY, firstValueFrom, interval, of, Subject} from "rxjs";
@@ -29,9 +31,37 @@ import {
     partitionWhile,
     tail
 } from "@softwareventures/array";
-
 import type {FileEvent} from "./events.js";
 import {observeFileEvents} from "./events.js";
+
+// Test our assumption about fs.watch, that it will emit events for any changes
+// that happen to watched files immediately after the call to fs.watch returns.
+//
+// This behaviour is not documented, but it is implied by the absence of any
+// "ready" event.
+test("fs.watch: watch file, events start emitting immediately after return", async t => {
+    await temporaryFileTask(async path => {
+        const file = await open(path, "w");
+        await file.close();
+        const abortController = new AbortController();
+        const events: Array<
+            | {readonly event: "Error"; readonly error: Error}
+            | {readonly event: WatchEventType; readonly path: string | null}
+        > = [];
+        const watcher = watch(
+            path,
+            {signal: abortController.signal},
+            (event, path) => void events.push({event, path})
+        );
+        watcher.addListener("error", error => void events.push({event: "Error", error}));
+        const file2 = await open(path, "w");
+        await file2.close();
+        abortController.abort();
+        t.deepEqual(events, [
+            {event: "change", path: basename(path)}
+        ]);
+    });
+});
 
 test("observeFileEvents: file no actions", async t => {
     const {events} = await testFileEvents(async () => {});
