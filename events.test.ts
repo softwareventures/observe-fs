@@ -110,7 +110,15 @@ test("observeFileEvents: rename file", async t => {
     const {testFilename, events} = await testFileEvents(async path => {
         await rename(path, `${path}_renamed`);
     });
-    t.deepEqual(events, [{event: "rename", path: testFilename}]);
+    t.deepEqual(events, [
+        {
+            event: "rename",
+            path:
+                os.platform() === "win32" || os.platform() === "linux"
+                    ? testFilename
+                    : `${testFilename}_renamed`
+        }
+    ]);
 });
 
 test("observeFileEvents: delete file", async t => {
