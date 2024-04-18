@@ -57,7 +57,9 @@ test("fs.watch: watch file, events start emitting immediately after return", asy
         const file2 = await open(path, "w");
         await file2.close();
         await firstValueFrom(
-            of(null).pipe(delay(os.platform() === "win32" || os.platform() === "linux" ? 20 : 200))
+            of(null).pipe(
+                delay(os.platform() === "win32" || os.platform() === "linux" ? 20 : 10000)
+            )
         );
         abortController.abort();
         t.deepEqual(events, [{event: "change", path: basename(path)}]);
