@@ -69,6 +69,45 @@ test("fs.watch: watch file, events start emitting immediately after return", asy
     });
 });
 
+// Test our assumption about fs.watch, that it will emit events for any changes
+// that happen to watched files immediately after the call to fs.watch returns.
+//
+// This behaviour is not documented, but it is implied by the absence of any
+// "ready" event.
+test("fs.watch: watch directory, events start emitting immediately after return", async t => {
+    await temporaryDirectoryTask(async path => {
+        const abortController = new AbortController();
+        const events: Array<
+            | {readonly event: "Error"; readonly error: Error}
+            | {readonly event: WatchEventType; readonly path: string | null}
+        > = [];
+        const watcher = watch(
+            path,
+            {signal: abortController.signal},
+            (event, path) => void events.push({event, path})
+        );
+        watcher.addListener("error", error => void events.push({event: "Error", error}));
+        // On macOS, fs.watch does not start emitting events until after an
+        // arbitrary delay.
+        // See https://github.com/nodejs/node/issues/52601
+        if (os.platform() !== "win32" && os.platform() !== "linux") {
+            await new Promise(resolve => {
+                setTimeout(resolve, 200);
+            });
+        }
+        const file = await open(resolve(path, "test"), "w");
+        await file.close();
+        // On macOS, there is an arbitrary delay before each event.
+        if (os.platform() !== "win32" && os.platform() !== "linux") {
+            await new Promise(resolve => {
+                setTimeout(resolve, 200);
+            });
+        }
+        abortController.abort();
+        t.deepEqual(events, [{event: "rename", path: "test"}]);
+    });
+});
+
 test("observeFileEvents: file no actions", async t => {
     const {events} = await testFileEvents(async () => {});
     t.deepEqual(events, []);
