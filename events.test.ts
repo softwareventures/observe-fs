@@ -54,6 +54,14 @@ test("fs.watch: watch file, events start emitting immediately after return", asy
             (event, path) => void events.push({event, path})
         );
         watcher.addListener("error", error => void events.push({event: "Error", error}));
+        // On macOS, fs.watch does not start emitting events until after an
+        // arbitrary delay.
+        // See https://github.com/nodejs/node/issues/52601
+        if (os.platform() !== "win32" && os.platform() !== "linux") {
+            await new Promise(resolve => {
+                setTimeout(resolve, 200);
+            });
+        }
         const file2 = await open(path, "w");
         await file2.close();
         await firstValueFrom(
