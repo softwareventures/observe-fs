@@ -5,22 +5,8 @@ import type {WatchEventType} from "node:fs";
 import {watch} from "node:fs";
 import test from "ava";
 import {temporaryDirectoryTask, temporaryFileTask} from "tempy";
-import {EMPTY, firstValueFrom, interval, of, Subject} from "rxjs";
-import {
-    concatWith,
-    delay,
-    filter,
-    map,
-    mergeMap,
-    mergeWith,
-    scan,
-    skipWhile,
-    switchMap,
-    takeUntil,
-    takeWhile,
-    tap,
-    toArray
-} from "rxjs/operators";
+import {EMPTY, firstValueFrom, of, Subject} from "rxjs";
+import {delay, mergeMap, mergeWith, scan, switchMap, takeWhile, toArray} from "rxjs/operators";
 import {
     all,
     first,
@@ -32,7 +18,7 @@ import {
     tail,
     take
 } from "@softwareventures/array";
-import type {FileEvent} from "./events.js";
+import type {ChangeEvent, FileEvent, RenameEvent} from "./events.js";
 import {observeFileEvents} from "./events.js";
 
 // Test our assumption about fs.watch, that it will emit events for any changes
@@ -173,7 +159,7 @@ test("observeFileEvents: open file for write and close", async t => {
         const file = await open(path, "w");
         await file.close();
     });
-    t.deepEqual(events, [{event: "change", path: testFilename}]);
+    t.deepEqual(events, [{event: "Change", path: testFilename}]);
 });
 
 test("observeFileEvents: open file for write, write text and close", async t => {
@@ -183,10 +169,10 @@ test("observeFileEvents: open file for write, write text and close", async t => 
         await file.close();
     });
     if (os.platform() === "win32" || os.platform() === "linux") {
-        t.deepEqual(omitDuplicateChange(events), [{event: "change", path: testFilename}]);
+        t.deepEqual(omitDuplicateChange(events), [{event: "Change", path: testFilename}]);
     } else {
         t.deepEqual(omitDuplicateChange(omitRenameAfterChange(events)), [
-            {event: "change", path: testFilename}
+            {event: "Change", path: testFilename}
         ]);
     }
 });
@@ -201,29 +187,29 @@ test("observeFileEvents: open file for write, write text, close, open same file 
         await file2.close();
     });
 
-    // Expect at least two "change" events, but possibly more.
+    // Expect at least two "Change" events, but possibly more.
     // When a file is opened and then written, this generates at least one
     // change event, but sometimes more than one.
     // Since we open and write the file twice, there should be at least
-    // two "change" events.
+    // two "Change" events.
     t.deepEqual(
         fold(
             os.platform() === "win32" || os.platform() === "linux"
                 ? events
                 : omitRenameAfterChange(events),
-            (accumulator: FileEvent[], event) =>
-                event.event === "change" &&
-                last(accumulator)?.event === "change" &&
+            (accumulator: Array<RenameEvent | ChangeEvent>, event) =>
+                event.event === "Change" &&
+                last(accumulator)?.event === "Change" &&
                 last(accumulator)?.path === event.path &&
-                last(initial(accumulator))?.event === "change" &&
+                last(initial(accumulator))?.event === "Change" &&
                 last(initial(accumulator))?.path === event.path
                     ? accumulator
                     : [...accumulator, event],
             []
         ),
         [
-            {event: "change", path: testFilename},
-            {event: "change", path: testFilename}
+            {event: "Change", path: testFilename},
+            {event: "Change", path: testFilename}
         ]
     );
 });
@@ -234,7 +220,7 @@ test("observeFileEvents: rename file", async t => {
     });
     t.deepEqual(events, [
         {
-            event: "rename",
+            event: "Rename",
             path:
                 os.platform() === "win32" || os.platform() === "linux"
                     ? testFilename
@@ -251,11 +237,11 @@ test("observeFileEvents: delete file", async t => {
         events,
         os.platform() === "linux"
             ? [
-                  {event: "change", path: testFilename},
-                  {event: "rename", path: testFilename},
-                  {event: "rename", path: testFilename}
+                  {event: "Change", path: testFilename},
+                  {event: "Rename", path: testFilename},
+                  {event: "Rename", path: testFilename}
               ]
-            : [{event: "rename", path: testFilename}]
+            : [{event: "Rename", path: testFilename}]
     );
 });
 
@@ -269,7 +255,7 @@ test("observeFileEvents: observe directory non-recursive, open file for write an
         const file = await open(resolve(path, "a"), "w");
         await file.close();
     });
-    t.deepEqual(events, [{event: "rename", path: "a"}]);
+    t.deepEqual(events, [{event: "Rename", path: "a"}]);
 });
 
 test("observeFileEvents: observe directory non-recursive, open file for write, write text, and close", async t => {
@@ -280,14 +266,14 @@ test("observeFileEvents: observe directory non-recursive, open file for write, w
     });
     if (os.platform() === "win32") {
         t.deepEqual(omitDuplicateChange(events), [
-            {event: "rename", path: "a"},
-            {event: "change", path: "a"}
+            {event: "Rename", path: "a"},
+            {event: "Change", path: "a"}
         ]);
     } else if (os.platform() === "linux") {
-        t.deepEqual(omitChangeAfterRename(events), [{event: "rename", path: "a"}]);
+        t.deepEqual(omitChangeAfterRename(events), [{event: "Rename", path: "a"}]);
     } else {
         t.deepEqual(omitChangeAfterRename(omitRenameAfterChange(omitDuplicateRename(events))), [
-            {event: "rename", path: "a"}
+            {event: "Rename", path: "a"}
         ]);
     }
 });
@@ -303,20 +289,20 @@ test("observeFileEvents: observe directory non-recursive, open file for write, w
     });
     if (os.platform() === "win32") {
         t.deepEqual(omitDuplicateChange(events), [
-            {event: "rename", path: "a"},
-            {event: "change", path: "a"},
-            {event: "rename", path: "b"},
-            {event: "change", path: "b"}
+            {event: "Rename", path: "a"},
+            {event: "Change", path: "a"},
+            {event: "Rename", path: "b"},
+            {event: "Change", path: "b"}
         ]);
     } else if (os.platform() === "linux") {
         t.deepEqual(omitChangeAfterRename(events), [
-            {event: "rename", path: "a"},
-            {event: "rename", path: "b"}
+            {event: "Rename", path: "a"},
+            {event: "Rename", path: "b"}
         ]);
     } else {
         t.deepEqual(omitChangeAfterRename(omitRenameAfterChange(omitDuplicateRename(events))), [
-            {event: "rename", path: "a"},
-            {event: "rename", path: "b"}
+            {event: "Rename", path: "a"},
+            {event: "Rename", path: "b"}
         ]);
     }
 });
@@ -335,11 +321,11 @@ test("observeFileEvents: observe directory non-recursive, open file for write, c
     });
     if (os.platform() === "win32" || os.platform() === "linux") {
         t.deepEqual(events, [
-            {event: "rename", path: "a"},
-            {event: "rename", path: "b"},
-            {event: "rename", path: "a"},
-            {event: "rename", path: "c"},
-            {event: "rename", path: "b"}
+            {event: "Rename", path: "a"},
+            {event: "Rename", path: "b"},
+            {event: "Rename", path: "a"},
+            {event: "Rename", path: "c"},
+            {event: "Rename", path: "b"}
         ]);
     } else {
         // When a file is moved, renamed, or deleted, sometimes the events
@@ -348,11 +334,11 @@ test("observeFileEvents: observe directory non-recursive, open file for write, c
         const [aEvents, otherEvents] = partition(events, event => event.path === "a");
         const [bEvents, otherEvents2] = partition(otherEvents, event => event.path === "b");
         const [cEvents, unexpectedEvents] = partition(otherEvents2, event => event.path === "c");
-        t.deepEqual(first(aEvents), {event: "rename", path: "a"});
-        t.true(all(tail(aEvents), event => event.event === "rename"));
-        t.deepEqual(first(bEvents), {event: "rename", path: "b"});
-        t.true(all(tail(bEvents), event => event.event === "rename"));
-        t.deepEqual(cEvents, [{event: "rename", path: "c"}]);
+        t.deepEqual(first(aEvents), {event: "Rename", path: "a"});
+        t.true(all(tail(aEvents), event => event.event === "Rename"));
+        t.deepEqual(first(bEvents), {event: "Rename", path: "b"});
+        t.true(all(tail(bEvents), event => event.event === "Rename"));
+        t.deepEqual(cEvents, [{event: "Rename", path: "c"}]);
         t.deepEqual(unexpectedEvents, []);
     }
 });
@@ -370,19 +356,19 @@ test("observeFileEvents: observe directory non-recursive, make inner directory, 
     });
     if (os.platform() === "win32") {
         // Creating a file in the watched directory sometimes, but not always,
-        // generates a "change" event for the watched directory.
+        // generates a "Change" event for the watched directory.
         const [aEvents, otherEvents] = partitionWhile(events, event => event.path === "a");
-        t.deepEqual(first(aEvents), {event: "rename", path: "a"});
-        t.true(all(tail(aEvents), event => event.event === "change"));
+        t.deepEqual(first(aEvents), {event: "Rename", path: "a"});
+        t.true(all(tail(aEvents), event => event.event === "Change"));
         t.deepEqual(otherEvents, [
-            {event: "rename", path: "c"},
-            {event: "rename", path: "a"}
+            {event: "Rename", path: "c"},
+            {event: "Rename", path: "a"}
         ]);
     } else if (os.platform() === "linux") {
         t.deepEqual(events, [
-            {event: "rename", path: "a"},
-            {event: "rename", path: "c"},
-            {event: "rename", path: "a"}
+            {event: "Rename", path: "a"},
+            {event: "Rename", path: "c"},
+            {event: "Rename", path: "a"}
         ]);
     } else {
         // When a file is moved, renamed, or deleted, sometimes the events
@@ -390,9 +376,9 @@ test("observeFileEvents: observe directory non-recursive, make inner directory, 
         // are omitted.
         const [aEvents, otherEvents] = partition(events, event => event.path === "a");
         const [cEvents, unexpectedEvents] = partition(otherEvents, event => event.path === "c");
-        t.deepEqual(first(aEvents), {event: "rename", path: "a"});
-        t.true(all(tail(aEvents), event => event.event === "rename"));
-        t.deepEqual(cEvents, [{event: "rename", path: "c"}]);
+        t.deepEqual(first(aEvents), {event: "Rename", path: "a"});
+        t.true(all(tail(aEvents), event => event.event === "Rename"));
+        t.deepEqual(cEvents, [{event: "Rename", path: "c"}]);
         t.deepEqual(unexpectedEvents, []);
     }
 });
@@ -407,8 +393,8 @@ test("observeFileEvents: observe directory non-recursive, delete observed direct
         // The "path" field in both events will be the name of the directory we are watching.
         const {testFilename, events} = await result;
         t.deepEqual(events, [
-            {event: "rename", path: testFilename},
-            {event: "rename", path: testFilename}
+            {event: "Rename", path: testFilename},
+            {event: "Rename", path: testFilename}
         ]);
     } else {
         const {events} = await result;
@@ -428,7 +414,7 @@ if (os.platform() !== "linux") {
             const file = await open(resolve(path, "a"), "w");
             await file.close();
         }, true);
-        t.deepEqual(events, [{event: "rename", path: "a"}]);
+        t.deepEqual(events, [{event: "Rename", path: "a"}]);
     });
 
     test("observeFileEvents: observe directory recursive, open file for write, write text, and close", async t => {
@@ -439,12 +425,12 @@ if (os.platform() !== "linux") {
         }, true);
         if (os.platform() === "win32") {
             t.deepEqual(omitDuplicateChange(events), [
-                {event: "rename", path: "a"},
-                {event: "change", path: "a"}
+                {event: "Rename", path: "a"},
+                {event: "Change", path: "a"}
             ]);
         } else {
             t.deepEqual(omitChangeAfterRename(omitRenameAfterChange(omitDuplicateRename(events))), [
-                {event: "rename", path: "a"}
+                {event: "Rename", path: "a"}
             ]);
         }
     });
@@ -460,15 +446,15 @@ if (os.platform() !== "linux") {
         }, true);
         if (os.platform() === "win32") {
             t.deepEqual(omitDuplicateChange(events), [
-                {event: "rename", path: "a"},
-                {event: "change", path: "a"},
-                {event: "rename", path: "b"},
-                {event: "change", path: "b"}
+                {event: "Rename", path: "a"},
+                {event: "Change", path: "a"},
+                {event: "Rename", path: "b"},
+                {event: "Change", path: "b"}
             ]);
         } else {
             t.deepEqual(omitChangeAfterRename(omitRenameAfterChange(omitDuplicateRename(events))), [
-                {event: "rename", path: "a"},
-                {event: "rename", path: "b"}
+                {event: "Rename", path: "a"},
+                {event: "Rename", path: "b"}
             ]);
         }
     });
@@ -487,11 +473,11 @@ if (os.platform() !== "linux") {
         }, true);
         if (os.platform() === "win32") {
             t.deepEqual(events, [
-                {event: "rename", path: "a"},
-                {event: "rename", path: "b"},
-                {event: "rename", path: "a"},
-                {event: "rename", path: "c"},
-                {event: "rename", path: "b"}
+                {event: "Rename", path: "a"},
+                {event: "Rename", path: "b"},
+                {event: "Rename", path: "a"},
+                {event: "Rename", path: "c"},
+                {event: "Rename", path: "b"}
             ]);
         } else {
             // When a file is moved, renamed, or deleted, sometimes the events
@@ -503,10 +489,10 @@ if (os.platform() !== "linux") {
                 otherEvents2,
                 event => event.path === "c"
             );
-            t.deepEqual(first(aEvents), {event: "rename", path: "a"});
-            t.true(all(tail(aEvents), event => event.event === "rename"));
-            t.deepEqual(first(bEvents), {event: "rename", path: "b"});
-            t.deepEqual(cEvents, [{event: "rename", path: "c"}]);
+            t.deepEqual(first(aEvents), {event: "Rename", path: "a"});
+            t.true(all(tail(aEvents), event => event.event === "Rename"));
+            t.deepEqual(first(bEvents), {event: "Rename", path: "b"});
+            t.deepEqual(cEvents, [{event: "Rename", path: "c"}]);
             t.deepEqual(unexpectedEvents, []);
         }
     });
@@ -524,7 +510,7 @@ if (os.platform() !== "linux") {
         }, true);
         if (os.platform() === "win32") {
             // Creating or deleting a file in the watched directory sometimes,
-            // but not always, generates a "change" event for the watched directory.
+            // but not always, generates a "Change" event for the watched directory.
             const [events1, afterEvents1] = partitionWhile(events, event => event.path === "a");
             const [events2, afterEvents2] = partitionWhile(
                 afterEvents1,
@@ -546,20 +532,20 @@ if (os.platform() !== "linux") {
                 afterEvents5,
                 event => event.path === "c"
             );
-            t.deepEqual(events1, [{event: "rename", path: "a"}]);
-            t.deepEqual(events2, [{event: "rename", path: `a${sep}b`}]);
+            t.deepEqual(events1, [{event: "Rename", path: "a"}]);
+            t.deepEqual(events2, [{event: "Rename", path: `a${sep}b`}]);
             t.true(events3.length <= 1);
-            t.true(all(events3, event => event.event === "change"));
-            t.deepEqual(events4, [{event: "rename", path: `a${sep}b`}]);
+            t.true(all(events3, event => event.event === "Change"));
+            t.deepEqual(events4, [{event: "Rename", path: `a${sep}b`}]);
             t.true(events5.length <= 1);
-            t.true(all(events5, event => event.event === "change"));
-            t.deepEqual(events6, [{event: "rename", path: "c"}]);
+            t.true(all(events5, event => event.event === "Change"));
+            t.deepEqual(events6, [{event: "Rename", path: "c"}]);
             if (otherEvents.length === 1) {
-                t.deepEqual(otherEvents, [{event: "rename", path: "a"}]);
+                t.deepEqual(otherEvents, [{event: "Rename", path: "a"}]);
             } else {
                 t.deepEqual(otherEvents, [
-                    {event: "change", path: "a"},
-                    {event: "rename", path: "a"}
+                    {event: "Change", path: "a"},
+                    {event: "Rename", path: "a"}
                 ]);
             }
         } else {
@@ -575,11 +561,11 @@ if (os.platform() !== "linux") {
                 otherEvents2,
                 event => event.path === "c"
             );
-            t.deepEqual(first(aEvents), {event: "rename", path: "a"});
-            t.true(all(tail(aEvents), event => event.event === "rename"));
-            t.deepEqual(first(bEvents), {event: "rename", path: `a${sep}b`});
-            t.true(all(tail(bEvents), event => event.event === "rename"));
-            t.deepEqual(cEvents, [{event: "rename", path: "c"}]);
+            t.deepEqual(first(aEvents), {event: "Rename", path: "a"});
+            t.true(all(tail(aEvents), event => event.event === "Rename"));
+            t.deepEqual(first(bEvents), {event: "Rename", path: `a${sep}b`});
+            t.true(all(tail(bEvents), event => event.event === "Rename"));
+            t.deepEqual(cEvents, [{event: "Rename", path: "c"}]);
             t.deepEqual(unexpectedEvents, []);
         }
     });
@@ -599,19 +585,15 @@ if (os.platform() !== "linux") {
 
 interface TestEventsResult {
     readonly testFilename: string;
-    readonly events: readonly FileEvent[];
+    readonly events: ReadonlyArray<RenameEvent | ChangeEvent>;
 }
 
 async function testFileEvents(actions: (path: string) => Promise<void>): Promise<TestEventsResult> {
     return temporaryFileTask(async path => {
-        const writeEmptyFile = async (): Promise<void> => {
-            const file = await open(path, "w");
-            await file.close();
-        };
+        const file = await open(path, "w");
+        await file.close();
 
-        await writeEmptyFile();
-
-        const events = await testEventsInternal({path, writeSentinel: writeEmptyFile, actions});
+        const events = await testEventsInternal({path, actions});
         return {testFilename: basename(path), events};
     });
 }
@@ -621,184 +603,82 @@ async function testDirectoryEvents(
     recursive = false
 ): Promise<TestEventsResult> {
     return temporaryDirectoryTask(async path => {
-        const sentinelPath = resolve(path, "sentinel");
-        const writeSentinel = async (): Promise<void> => {
-            const file = await open(sentinelPath, "w");
-            await file.close();
-            await rm(sentinelPath);
-        };
-
-        const events = await testEventsInternal({path, writeSentinel, actions, recursive});
+        const events = await testEventsInternal({path, actions, recursive});
         return {testFilename: basename(path), events};
     });
 }
 
-type InternalEvent =
-    | "WritingSentinel"
-    | "WroteSentinel"
-    | "SeenWritingSentinel"
-    | "SeenWrittenSentinel"
-    | "Ready"
-    | "Done"
-    | {readonly event: "Error"; readonly reason: unknown};
-
-type ScannedInternalEvent =
-    | "Init"
-    | "RequestSentinel"
-    | "WritingSentinel"
-    | "WroteSentinel"
-    | "SeenWritingSentinel"
-    | "SeenWrittenSentinel"
-    | "Ready"
-    | "Done";
-
-type InternalState =
-    | "Init"
-    | "WritingSentinel"
-    | "SeenWritingSentinel"
-    | "SeenWrittenSentinel"
-    | "Ready"
-    | "Done";
-
 interface TestEventsInternalOptions {
     readonly path: string;
-    readonly writeSentinel: () => Promise<void>;
     readonly actions: (path: string) => Promise<void>;
     readonly recursive?: boolean | undefined;
 }
 
 async function testEventsInternal({
     path,
-    writeSentinel,
     actions,
     recursive = false
-}: TestEventsInternalOptions): Promise<FileEvent[]> {
-    const requestSentinelEvents = interval(
-        os.platform() === "win32" || os.platform() === "linux" ? 1 : 10
-    ).pipe(map(() => "RequestSentinel" as const));
-    const internalEvents = new Subject<InternalEvent>();
-    const fileEvents = observeFileEvents({path, recursive});
+}: TestEventsInternalOptions): Promise<Array<RenameEvent | ChangeEvent>> {
+    const doneEvents = new Subject<"Done">();
 
     return firstValueFrom(
-        requestSentinelEvents
-            .pipe(
-                takeUntil(
-                    internalEvents.pipe(
-                        filter(
-                            event =>
-                                event === "SeenWritingSentinel" || event === "SeenWrittenSentinel"
-                        )
-                    )
-                ),
-                mergeWith(
-                    fileEvents,
-                    internalEvents.pipe(
-                        map(event => {
-                            if (typeof event === "object") {
-                                throw event.reason;
-                            } else {
-                                return event;
-                            }
-                        })
-                    )
-                ),
-                scan(
-                    (
-                        previous: {
-                            readonly event: ScannedInternalEvent | FileEvent;
-                            readonly state: InternalState;
-                        },
-                        event
-                    ) =>
-                        event === "WritingSentinel" ||
-                        event === "SeenWritingSentinel" ||
-                        event === "SeenWrittenSentinel" ||
-                        event === "Ready" ||
-                        event === "Done"
-                            ? ({event, state: event} as const)
-                            : event === "WroteSentinel"
-                              ? previous.state === "SeenWritingSentinel"
-                                  ? ({
-                                        event: "SeenWrittenSentinel",
-                                        state: "SeenWrittenSentinel"
-                                    } as const)
-                                  : ({event: "WroteSentinel", state: "Init"} as const)
-                              : {event, state: previous.state},
-                    {event: "Init", state: "Init"} as const
-                ),
-                switchMap(({event, state}) =>
-                    of({event, state}).pipe(
-                        concatWith(
-                            event === "SeenWrittenSentinel"
-                                ? of({event: "DelayAfterSeenSentinel", state} as const).pipe(
-                                      delay(
-                                          os.platform() === "win32" || os.platform() === "linux"
-                                              ? 4
-                                              : 100
-                                      )
-                                  )
-                                : EMPTY
-                        )
-                    )
-                ),
-                switchMap(({event, state}) => {
-                    if (state === "Done") {
-                        const delayDone = of({event: "Done", state: "Done"}).pipe(
-                            delay(os.platform() === "win32" || os.platform() === "linux" ? 20 : 200)
-                        );
-                        if (event === "Done") {
-                            return delayDone;
-                        } else {
-                            return of({event, state}).pipe(concatWith(delayDone));
-                        }
-                    } else {
-                        return of({event, state});
-                    }
+        observeFileEvents({path, recursive}).pipe(
+            mergeWith(doneEvents),
+            scan(
+                (
+                    {
+                        state
+                    }: {readonly event: FileEvent | "Done"; readonly state: "Active" | "Done"},
+                    event
+                ) => ({
+                    event,
+                    state: event === "Done" ? "Done" : state
                 }),
-                tap(({event, state}) => {
-                    if (event === "RequestSentinel") {
-                        if (state === "Init") {
-                            internalEvents.next("WritingSentinel");
-                            void writeSentinel().then(
-                                () => void internalEvents.next("WroteSentinel")
-                            );
-                        }
-                    } else if (event === "DelayAfterSeenSentinel") {
-                        if (state === "SeenWrittenSentinel") {
-                            internalEvents.next("Ready");
-                        }
-                    } else if (event === "Ready") {
-                        void actions(path).then(
-                            () => void internalEvents.next("Done"),
-                            (reason: unknown) => void internalEvents.next({event: "Error", reason})
-                        );
-                    } else if (typeof event === "object") {
-                        if (state === "Init" || state === "SeenWrittenSentinel") {
-                            internalEvents.next("SeenWrittenSentinel");
-                        } else if (state === "WritingSentinel" || state === "SeenWritingSentinel") {
-                            internalEvents.next("SeenWritingSentinel");
-                        }
-                    }
-                })
-            )
-            .pipe(
-                skipWhile(({event}) => event !== "Ready"),
-                takeWhile(({event}) => event !== "Done"),
-                mergeMap(({event}) => (typeof event === "object" ? of(event) : EMPTY)),
-                toArray()
-            )
+                {event: {event: "Ready"}, state: "Active"}
+            ),
+            switchMap(({event, state}) =>
+                (event === "Done" ? EMPTY : of(event)).pipe(
+                    mergeWith(
+                        state === "Done"
+                            ? of({event: "Done"} as const).pipe(
+                                  delay(
+                                      os.platform() === "win32" || os.platform() === "linux"
+                                          ? 20
+                                          : 200
+                                  )
+                              )
+                            : EMPTY
+                    )
+                )
+            ),
+            takeWhile(({event}) => event !== "Done"),
+            mergeMap(event => {
+                if (event.event === "Ready") {
+                    return of(actions(path).then(() => void doneEvents.next("Done"))).pipe(
+                        mergeMap(() => EMPTY)
+                    );
+                } else if (event.event === "Done") {
+                    return EMPTY;
+                } else {
+                    return of(event);
+                }
+            }),
+            toArray()
+        )
     );
 }
 
-function omitChangeAfterRename(events: readonly FileEvent[]): FileEvent[] {
+function omitChangeAfterRename(
+    events: ReadonlyArray<RenameEvent | ChangeEvent>
+): Array<RenameEvent | ChangeEvent> {
     // On Linux and macOS, when observing a directory, when a file is created
-    // and then written, the "rename" event is sometimes, but not always,
-    // followed by a "change" event.
+    // and then written, the "Rename" event is sometimes, but not always,
+    // followed by a "Change" event.
     return fold(
         events,
-        (accumulator: FileEvent[], event) =>
-            event.event === "change" &&
-            last(accumulator)?.event === "rename" &&
+        (accumulator: Array<RenameEvent | ChangeEvent>, event) =>
+            event.event === "Change" &&
+            last(accumulator)?.event === "Rename" &&
             last(accumulator)?.path === event.path
                 ? accumulator
                 : [...accumulator, event],
@@ -806,14 +686,16 @@ function omitChangeAfterRename(events: readonly FileEvent[]): FileEvent[] {
     );
 }
 
-function omitDuplicateChange(events: readonly FileEvent[]): FileEvent[] {
+function omitDuplicateChange(
+    events: ReadonlyArray<RenameEvent | ChangeEvent>
+): Array<RenameEvent | ChangeEvent> {
     // When observing a file, when the file is opened and then written, this
-    // generates at least one "change" event, but sometimes more than one.
+    // generates at least one "Change" event, but sometimes more than one.
     return fold(
         events,
-        (accumulator: FileEvent[], event) =>
-            event.event === "change" &&
-            last(accumulator)?.event === "change" &&
+        (accumulator: Array<RenameEvent | ChangeEvent>, event) =>
+            event.event === "Change" &&
+            last(accumulator)?.event === "Change" &&
             last(accumulator)?.path === event.path
                 ? accumulator
                 : [...accumulator, event],
@@ -821,15 +703,17 @@ function omitDuplicateChange(events: readonly FileEvent[]): FileEvent[] {
     );
 }
 
-function omitDuplicateRename(events: readonly FileEvent[]): FileEvent[] {
+function omitDuplicateRename(
+    events: ReadonlyArray<RenameEvent | ChangeEvent>
+): Array<RenameEvent | ChangeEvent> {
     // On macOS, when observing a directory, when a new file is opened and
-    // then written, this generates at least one "rename" event, but sometimes
+    // then written, this generates at least one "Rename" event, but sometimes
     // more than one.
     return fold(
         events,
-        (accumulator: FileEvent[], event) =>
-            event.event === "rename" &&
-            last(accumulator)?.event === "rename" &&
+        (accumulator: Array<RenameEvent | ChangeEvent>, event) =>
+            event.event === "Rename" &&
+            last(accumulator)?.event === "Rename" &&
             last(accumulator)?.path === event.path
                 ? accumulator
                 : [...accumulator, event],
@@ -837,14 +721,16 @@ function omitDuplicateRename(events: readonly FileEvent[]): FileEvent[] {
     );
 }
 
-function omitRenameAfterChange(events: readonly FileEvent[]): FileEvent[] {
+function omitRenameAfterChange(
+    events: ReadonlyArray<RenameEvent | ChangeEvent>
+): Array<RenameEvent | ChangeEvent> {
     // On macOS, when an existing file is opened and written, this sometimes
-    // generates a "rename" event after the "change" events.
+    // generates a "Rename" event after the "Change" events.
     return fold(
         events,
-        (accumulator: FileEvent[], event) =>
-            event.event === "rename" &&
-            last(accumulator)?.event === "change" &&
+        (accumulator: Array<RenameEvent | ChangeEvent>, event) =>
+            event.event === "Rename" &&
+            last(accumulator)?.event === "Change" &&
             last(accumulator)?.path === event.path
                 ? accumulator
                 : [...accumulator, event],
