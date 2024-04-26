@@ -66,7 +66,7 @@ export function observeFileEvents(
         // So, we just report it as ready when the first event comes through,
         // or after 400ms, whichever comes first.
         // See https://github.com/nodejs/node/issues/52601
-        return timer(400).pipe(
+        return timer(200).pipe(
             takeUntil(events),
             map(() => ({event: "Ready"}) as const),
             mergeWith(events),
