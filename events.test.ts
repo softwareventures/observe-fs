@@ -683,7 +683,7 @@ async function testEventsInternal({
                                   delay(
                                       os.platform() === "win32" || os.platform() === "linux"
                                           ? 20
-                                          : 200
+                                          : 400
                                   )
                               )
                             : EMPTY
