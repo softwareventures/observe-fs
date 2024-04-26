@@ -602,7 +602,11 @@ test("observeFileEvents: first event is Ready", async t => {
                         mergeWith(
                             from(writeFile()).pipe(
                                 map(() => ({event: "Done"}) as const),
-                                delay(200)
+                                delay(
+                                    os.platform() === "win32" || os.platform() === "linux"
+                                        ? 20
+                                        : 200
+                                )
                             )
                         )
                     );
