@@ -64,9 +64,9 @@ export function observeFileEvents(
     } else {
         // On macOS, we can't know for sure when the watcher is ready.
         // So, we just report it as ready when the first event comes through,
-        // or after 300ms, whichever comes first.
+        // or after 400ms, whichever comes first.
         // See https://github.com/nodejs/node/issues/52601
-        return timer(300).pipe(
+        return timer(400).pipe(
             takeUntil(events),
             map(() => ({event: "Ready"}) as const),
             mergeWith(events),
