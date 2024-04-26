@@ -5,8 +5,8 @@ import type {WatchEventType} from "node:fs";
 import {watch} from "node:fs";
 import test from "ava";
 import {temporaryDirectoryTask, temporaryFileTask} from "tempy";
-import {EMPTY, firstValueFrom, of, Subject} from "rxjs";
-import {delay, mergeMap, mergeWith, scan, switchMap, takeWhile, toArray} from "rxjs/operators";
+import {EMPTY, firstValueFrom, from, of, Subject} from "rxjs";
+import {delay, map, mergeMap, mergeWith, scan, switchMap, takeWhile, toArray} from "rxjs/operators";
 import {
     all,
     first,
@@ -582,6 +582,41 @@ if (os.platform() !== "linux") {
         }
     });
 }
+
+test("observeFileEvents: first event is Ready", async t => {
+    await temporaryFileTask(async path => {
+        const writeFile = async (): Promise<void> => {
+            const file = await open(path, "w");
+            await file.close();
+        };
+
+        await writeFile();
+
+        const interval = setInterval(() => void writeFile(), 10);
+
+        const events = await firstValueFrom(
+            observeFileEvents(path).pipe(
+                mergeMap(event => {
+                    clearInterval(interval);
+                    return of(event).pipe(
+                        mergeWith(
+                            from(writeFile()).pipe(
+                                map(() => ({event: "Done"}) as const),
+                                delay(200)
+                            )
+                        )
+                    );
+                }),
+                takeWhile(({event}) => event !== "Done"),
+                toArray()
+            )
+        );
+
+        t.true(events.length > 1);
+        t.deepEqual(events[0], {event: "Ready"});
+        t.true(all(initial(tail(events)), ({event}) => event !== "Ready" && event !== "Done"));
+    });
+});
 
 interface TestEventsResult {
     readonly testFilename: string;
