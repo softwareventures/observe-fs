@@ -1,8 +1,8 @@
 import {watch} from "node:fs";
 import {resolve} from "node:path";
 import * as os from "node:os";
-import {mergeMap, Observable, of, timer} from "rxjs";
-import {map, mergeWith, takeUntil} from "rxjs/operators";
+import {mergeMap, Observable, timer} from "rxjs";
+import {map, mergeWith} from "rxjs/operators";
 
 export type FileEvent = ReadyEvent | RenameEvent | ChangeEvent;
 
@@ -67,14 +67,12 @@ export function observeFileEvents(
         // or after 400ms, whichever comes first.
         // See https://github.com/nodejs/node/issues/52601
         return timer(200).pipe(
-            takeUntil(events),
             map(() => ({event: "Ready"}) as const),
             mergeWith(events),
-            mergeMap((event, index) =>
-                index === 0 && event.event !== "Ready"
-                    ? [{event: "Ready"} as const, event]
-                    : of(event)
-            )
+            mergeMap((event, index) => [
+                ...(index === 0 ? [{event: "Ready"} as const] : []),
+                ...(event.event === "Ready" ? [] : [event])
+            ])
         );
     }
 }
