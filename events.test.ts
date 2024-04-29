@@ -671,7 +671,7 @@ platformTest("observeFileEvents: first event is Ready", async t => {
         );
 
         t.true(events.length > 1);
-        t.deepEqual(events[0], {event: "Ready"});
+        t.deepEqual(events[0], {event: "Ready", path, recursive: false});
         t.true(all(initial(tail(events)), ({event}) => event !== "Ready" && event !== "Done"));
     });
 });
@@ -727,7 +727,7 @@ async function testEventsInternal({
                     event,
                     state: event === "Done" ? "Done" : state
                 }),
-                {event: {event: "Ready"}, state: "Active"}
+                {event: {event: "Ready", path, recursive}, state: "Active"}
             ),
             switchMap(({event, state}) =>
                 (event === "Done" ? EMPTY : of(event)).pipe(

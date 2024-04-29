@@ -8,6 +8,8 @@ export type FileEvent = ReadyEvent | RenameEvent | ChangeEvent;
 
 export interface ReadyEvent {
     readonly event: "Ready";
+    readonly path: string;
+    readonly recursive: boolean;
 }
 
 export interface RenameEvent {
@@ -32,6 +34,7 @@ export function observeFileEvents(
 ): Observable<FileEvent> {
     const path = resolve(typeof options === "string" ? options : options.path);
     const recursive = typeof options === "object" ? options.recursive ?? false : false;
+    const ready = {event: "Ready", path, recursive} as const;
 
     const events = new Observable<FileEvent>(subscriber => {
         const abortController = new AbortController();
@@ -45,7 +48,7 @@ export function observeFileEvents(
 
         // On Windows and Linux, the watcher is ready as soon as fs.watch returns.
         if (platform === "win32" || platform === "linux") {
-            subscriber.next({event: "Ready"});
+            subscriber.next(ready);
         }
 
         watcher.addListener("error", error => void subscriber.error(error));
@@ -65,7 +68,7 @@ export function observeFileEvents(
             map(() => ({event: "Ready"}) as const),
             mergeWith(events),
             mergeMap((event, index) => [
-                ...(index === 0 ? [{event: "Ready"} as const] : []),
+                ...(index === 0 ? [ready] : []),
                 ...(event.event === "Ready" ? [] : [event])
             ])
         );
