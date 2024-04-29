@@ -30,23 +30,18 @@ const platform = os.platform();
 export function observeFileEvents(
     options: string | ObserveFileEventsOptions
 ): Observable<FileEvent> {
-    const path = typeof options === "string" ? options : options.path;
+    const path = resolve(typeof options === "string" ? options : options.path);
     const recursive = typeof options === "object" ? options.recursive ?? false : false;
-    const absolutePath = resolve(path);
 
     const events = new Observable<FileEvent>(subscriber => {
         const abortController = new AbortController();
-        const watcher = watch(
-            absolutePath,
-            {signal: abortController.signal, recursive},
-            (event, path) => {
-                if (event === "rename") {
-                    subscriber.next({event: "Rename", path} as const);
-                } else if (event === "change") {
-                    subscriber.next({event: "Change", path} as const);
-                }
+        const watcher = watch(path, {signal: abortController.signal, recursive}, (event, path) => {
+            if (event === "rename") {
+                subscriber.next({event: "Rename", path} as const);
+            } else if (event === "change") {
+                subscriber.next({event: "Change", path} as const);
             }
-        );
+        });
 
         // On Windows and Linux, the watcher is ready as soon as fs.watch returns.
         if (platform === "win32" || platform === "linux") {
