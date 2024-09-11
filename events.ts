@@ -33,7 +33,7 @@ export function observeFileEvents(
     options: string | ObserveFileEventsOptions
 ): Observable<FileEvent> {
     const path = resolve(typeof options === "string" ? options : options.path);
-    const recursive = typeof options === "object" ? options.recursive ?? false : false;
+    const recursive = typeof options === "object" ? (options.recursive ?? false) : false;
     const ready = {event: "Ready", path, recursive} as const;
 
     const events = new Observable<FileEvent>(subscriber => {
