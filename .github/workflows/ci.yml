@@ -1,5 +1,5 @@
 name: CI
-on: [push, pull_request]
+on: [ push, pull_request ]
 env:
   CI: true
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
@@ -11,8 +11,8 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [18.x, 20.x, 21.x]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        node-version: [ 18.x, 20.x, 21.x, 22.x ]
     steps:
       - name: git checkout
         uses: actions/checkout@v4
