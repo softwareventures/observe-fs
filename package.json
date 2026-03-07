@@ -51,7 +51,7 @@
     "eslint-plugin-prefer-arrow": "1.2.3",
     "eslint-plugin-sonarjs": "4.0.1",
     "husky": "9.1.7",
-    "inquirer": "9.3.7",
+    "inquirer": "9.3.8",
     "prettier": "3.4.2",
     "tempy": "3.1.0",
     "tsimp": "2.0.12",
