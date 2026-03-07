@@ -29,6 +29,23 @@ jobs:
           node-version: ${{matrix.node-version}}
       - run: corepack yarn
       - run: corepack yarn test
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v4
+      - name: yarn cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.yarn/berry/cache
+          key: ${{runner.os}}-node${{env.DEPLOY_NODE_VERSION}}-yarn-${{hashFiles('**/yarn.lock')}}
+          restore-keys: ${{runner.os}}-node${{env.DEPLOY_NODE_VERSION}}-yarn-
+      - name: Set up Node.js v${{env.DEPLOY_NODE_VERSION}}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{env.DEPLOY_NODE_VERSION}}
+      - run: corepack yarn
       - run: corepack yarn lint
   #deploy:
   #  name: Deploy
