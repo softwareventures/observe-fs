@@ -2,6 +2,5 @@
   "extends": "@softwareventures/tsconfig",
   "compilerOptions": {
     "types": ["node"]
-  },
-  "exclude": ["**/*.test.ts", "**/test.ts"]
+  }
 }
