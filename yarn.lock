@@ -660,7 +660,7 @@ __metadata:
     inquirer: "npm:9.3.8"
     prettier: "npm:3.8.1"
     rxjs: "npm:^6.0.0 || ^7.0.0"
-    tempy: "npm:3.1.0"
+    tempy: "npm:3.2.0"
     tsimp: "npm:2.0.12"
     tslib: "npm:^2.6.2"
     typescript: "npm:5.7.2"
@@ -5818,15 +5818,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tempy@npm:3.1.0":
-  version: 3.1.0
-  resolution: "tempy@npm:3.1.0"
+"tempy@npm:3.2.0":
+  version: 3.2.0
+  resolution: "tempy@npm:3.2.0"
   dependencies:
     is-stream: "npm:^3.0.0"
     temp-dir: "npm:^3.0.0"
     type-fest: "npm:^2.12.2"
     unique-string: "npm:^3.0.0"
-  checksum: 10c0/b88e70baa8d935ba8f0e0372b59ad1a961121f098da5fb4a6e05bec98ec32a49026b553532fb75c1c102ec782fd4c6a6bde0d46cbe87013fa324451ce476fb76
+  checksum: 10c0/0653c9b36323d2f25e8d24ba32f59e8dd2a9cb49740413516d8a890bb3a4d5885b56652b7231b7cebe4a5441076e8432bd5a03a76ee038c3c1f5fbb24f8cc771
   languageName: node
   linkType: hard
 
