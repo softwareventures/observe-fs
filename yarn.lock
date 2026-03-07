@@ -569,17 +569,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@softwareventures/array@npm:7.0.0":
-  version: 7.0.0
-  resolution: "@softwareventures/array@npm:7.0.0"
-  dependencies:
-    "@softwareventures/nullable": "npm:^1.0.0 || ^2.0.0 || ^3.0.0"
-    "@softwareventures/ordered": "npm:^1.1.0 || ^2.0.0"
-    tslib: "npm:^2.0.0"
-  checksum: 10c0/302ef50d8f2e46e606ae44260902a4d5c6755ec674e714d7b6b3b46ad24c874e41d640a1a66f67d01093cf6f3f359267333d3aa22369c49973dcc0eb73d6534d
-  languageName: node
-  linkType: hard
-
 "@softwareventures/array@npm:7.0.1":
   version: 7.0.1
   resolution: "@softwareventures/array@npm:7.0.1"
@@ -631,7 +620,7 @@ __metadata:
     "@eslint/js": "npm:9.39.4"
     "@softwareventures/array": "npm:7.0.1"
     "@softwareventures/eslint-config": "npm:10.0.0-alpha.2"
-    "@softwareventures/precise-commits": "npm:4.0.15"
+    "@softwareventures/precise-commits": "npm:4.0.23"
     "@softwareventures/prettier-config": "npm:4.0.0"
     "@softwareventures/tsconfig": "npm:8.1.0"
     "@types/node": "npm:>=20.0.0"
@@ -665,26 +654,25 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@softwareventures/precise-commits@npm:4.0.15":
-  version: 4.0.15
-  resolution: "@softwareventures/precise-commits@npm:4.0.15"
+"@softwareventures/precise-commits@npm:4.0.23":
+  version: 4.0.23
+  resolution: "@softwareventures/precise-commits@npm:4.0.23"
   dependencies:
-    "@softwareventures/array": "npm:7.0.0"
+    "@softwareventures/array": "npm:7.0.1"
     "@softwareventures/nullable": "npm:3.2.0"
     execa: "npm:5.1.1"
-    find-up: "npm:5.0.0"
-    glob: "npm:10.3.10"
-    ignore: "npm:5.3.1"
+    glob: "npm:10.4.5"
+    ignore: "npm:5.3.2"
     mri: "npm:1.2.0"
     ora: "npm:5.4.1"
-    rxjs: "npm:7.8.1"
-    tslib: "npm:2.6.2"
-    unknown: "npm:0.2.5"
+    rxjs: "npm:7.8.2"
+    tslib: "npm:2.8.1"
+    unknown: "npm:0.2.6"
   peerDependencies:
     prettier: ^1.8.0 || ^2.0.0 || ^3.0.0
   bin:
     precise-commits: lib/cli.js
-  checksum: 10c0/4203c75f4d64844852cd3ddab7b7ba680d8621d92b1c2632a2aec718fa7a0ec1cb5e854c8bed09a05160ecad3066354c17a7092be9c7aba3bb8b5a89fc885ca8
+  checksum: 10c0/f055dfe59d1362745a984ba0995a027f219eb3eb00a29b41ea569a554c5d40794766b50092531fe68cbea3babcff0a475173f609c3b88d51db86c25cc49788e3
   languageName: node
   linkType: hard
 
@@ -2856,7 +2844,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"find-up@npm:5.0.0, find-up@npm:^5.0.0":
+"find-up@npm:^5.0.0":
   version: 5.0.0
   resolution: "find-up@npm:5.0.0"
   dependencies:
@@ -3143,18 +3131,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:10.3.10":
-  version: 10.3.10
-  resolution: "glob@npm:10.3.10"
+"glob@npm:10.4.5, glob@npm:^10.3.7":
+  version: 10.4.5
+  resolution: "glob@npm:10.4.5"
   dependencies:
     foreground-child: "npm:^3.1.0"
-    jackspeak: "npm:^2.3.5"
-    minimatch: "npm:^9.0.1"
-    minipass: "npm:^5.0.0 || ^6.0.2 || ^7.0.0"
-    path-scurry: "npm:^1.10.1"
+    jackspeak: "npm:^3.1.2"
+    minimatch: "npm:^9.0.4"
+    minipass: "npm:^7.1.2"
+    package-json-from-dist: "npm:^1.0.0"
+    path-scurry: "npm:^1.11.1"
   bin:
     glob: dist/esm/bin.mjs
-  checksum: 10c0/13d8a1feb7eac7945f8c8480e11cd4a44b24d26503d99a8d8ac8d5aefbf3e9802a2b6087318a829fad04cb4e829f25c5f4f1110c68966c498720dd261c7e344d
+  checksum: 10c0/19a9759ea77b8e3ca0a43c2f07ecddc2ad46216b786bb8f993c445aee80d345925a21e5280c7b7c6c59e860a0154b84e4b2b60321fea92cd3c56b4a7489f160e
   languageName: node
   linkType: hard
 
@@ -3169,22 +3158,6 @@ __metadata:
     once: "npm:^1.3.0"
     path-is-absolute: "npm:^1.0.0"
   checksum: 10c0/65676153e2b0c9095100fe7f25a778bf45608eeb32c6048cf307f579649bcc30353277b3b898a3792602c65764e5baa4f643714dfbdfd64ea271d210c7a425fe
-  languageName: node
-  linkType: hard
-
-"glob@npm:^10.3.7":
-  version: 10.4.5
-  resolution: "glob@npm:10.4.5"
-  dependencies:
-    foreground-child: "npm:^3.1.0"
-    jackspeak: "npm:^3.1.2"
-    minimatch: "npm:^9.0.4"
-    minipass: "npm:^7.1.2"
-    package-json-from-dist: "npm:^1.0.0"
-    path-scurry: "npm:^1.11.1"
-  bin:
-    glob: dist/esm/bin.mjs
-  checksum: 10c0/19a9759ea77b8e3ca0a43c2f07ecddc2ad46216b786bb8f993c445aee80d345925a21e5280c7b7c6c59e860a0154b84e4b2b60321fea92cd3c56b4a7489f160e
   languageName: node
   linkType: hard
 
@@ -3425,14 +3398,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ignore@npm:5.3.1":
-  version: 5.3.1
-  resolution: "ignore@npm:5.3.1"
-  checksum: 10c0/703f7f45ffb2a27fb2c5a8db0c32e7dee66b33a225d28e8db4e1be6474795f606686a6e3bcc50e1aa12f2042db4c9d4a7d60af3250511de74620fbed052ea4cd
-  languageName: node
-  linkType: hard
-
-"ignore@npm:^5.2.0, ignore@npm:^5.2.4":
+"ignore@npm:5.3.2, ignore@npm:^5.2.0, ignore@npm:^5.2.4":
   version: 5.3.2
   resolution: "ignore@npm:5.3.2"
   checksum: 10c0/f9f652c957983634ded1e7f02da3b559a0d4cc210fca3792cb67f1b153623c9c42efdc1c4121af171e295444459fc4a9201101fb041b1104a3c000bccb188337
@@ -4034,19 +4000,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jackspeak@npm:^2.3.5":
-  version: 2.3.6
-  resolution: "jackspeak@npm:2.3.6"
-  dependencies:
-    "@isaacs/cliui": "npm:^8.0.2"
-    "@pkgjs/parseargs": "npm:^0.11.0"
-  dependenciesMeta:
-    "@pkgjs/parseargs":
-      optional: true
-  checksum: 10c0/f01d8f972d894cd7638bc338e9ef5ddb86f7b208ce177a36d718eac96ec86638a6efa17d0221b10073e64b45edc2ce15340db9380b1f5d5c5d000cbc517dc111
-  languageName: node
-  linkType: hard
-
 "jackspeak@npm:^3.1.2":
   version: 3.4.3
   resolution: "jackspeak@npm:3.4.3"
@@ -4496,7 +4449,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimatch@npm:^9.0.1, minimatch@npm:^9.0.4":
+"minimatch@npm:^9.0.4":
   version: 9.0.5
   resolution: "minimatch@npm:9.0.5"
   dependencies:
@@ -4953,7 +4906,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"path-scurry@npm:^1.10.1, path-scurry@npm:^1.11.1":
+"path-scurry@npm:^1.11.1":
   version: 1.11.1
   resolution: "path-scurry@npm:1.11.1"
   dependencies:
@@ -5312,7 +5265,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rxjs@npm:7.8.1, rxjs@npm:^6.0.0 || ^7.0.0, rxjs@npm:^7.5.5, rxjs@npm:^7.8.1":
+"rxjs@npm:7.8.2":
+  version: 7.8.2
+  resolution: "rxjs@npm:7.8.2"
+  dependencies:
+    tslib: "npm:^2.1.0"
+  checksum: 10c0/1fcd33d2066ada98ba8f21fcbbcaee9f0b271de1d38dc7f4e256bfbc6ffcdde68c8bfb69093de7eeb46f24b1fb820620bf0223706cff26b4ab99a7ff7b2e2c45
+  languageName: node
+  linkType: hard
+
+"rxjs@npm:^6.0.0 || ^7.0.0, rxjs@npm:^7.5.5, rxjs@npm:^7.8.1":
   version: 7.8.1
   resolution: "rxjs@npm:7.8.1"
   dependencies:
@@ -6006,7 +5968,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^1.9.3 || ^2.0.0 || ^2.1.0, tslib@npm:^2.0.0, tslib@npm:^2.1.0, tslib@npm:^2.3.1, tslib@npm:^2.6.2":
+"tslib@npm:2.8.1, tslib@npm:^1.9.3 || ^2.0.0 || ^2.1.0, tslib@npm:^2.0.0, tslib@npm:^2.1.0, tslib@npm:^2.3.1, tslib@npm:^2.6.2":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 10c0/9c4759110a19c53f992d9aae23aac5ced636e99887b51b9e61def52611732872ff7668757d4e4c61f19691e36f4da981cd9485e869b4a7408d689f6bf1f14e62
@@ -6243,10 +6205,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unknown@npm:0.2.5":
-  version: 0.2.5
-  resolution: "unknown@npm:0.2.5"
-  checksum: 10c0/8313b382826aafea3363e9698032db31093435d572271faea03c7a2d527e47626f0464c4594d999b1c025d038b26d5f7315e36cb001ed1697c3c14771d0b5322
+"unknown@npm:0.2.6":
+  version: 0.2.6
+  resolution: "unknown@npm:0.2.6"
+  checksum: 10c0/cc516e61cc3023d013390fb4603d2c285a1778095d0b86af369086be5ccfcada0a2900d6b23b38ff30b408091d2f169b095b68ed024508ad4b2e30993c2a7a24
   languageName: node
   linkType: hard
 
